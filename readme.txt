@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -86,6 +86,10 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.1.6 =
+* Text domain renamed to cf7-database-google-sheets to match the WordPress.org slug.
+* Submissions query rewritten with fully literal prepared statements (resolves all Plugin Check security warnings).
 
 = 1.1.5 =
 * Plugin Check compliance: table names now use the %i identifier placeholder in all queries (requires WordPress 6.2+), removed the deprecated load_plugin_textdomain() call, and annotated intentional custom-table queries.

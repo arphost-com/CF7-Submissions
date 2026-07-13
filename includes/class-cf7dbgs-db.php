@@ -147,19 +147,9 @@ class CF7DBGS_DB {
 		);
 		$args     = wp_parse_args( $args, $defaults );
 
-		$where = array();
-		$vals  = array( self::table() ); // First %i placeholder.
-
-		if ( $args['form_id'] ) {
-			$where[] = 'form_id = %d';
-			$vals[]  = absint( $args['form_id'] );
-		}
-		if ( '' !== $args['search'] ) {
-			$where[] = 'fields LIKE %s';
-			$vals[]  = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-		}
-
-		$where_sql = $where ? ' WHERE ' . implode( ' AND ', $where ) : '';
+		$table   = self::table();
+		$form_id = absint( $args['form_id'] );
+		$like    = ( '' !== $args['search'] ) ? '%' . $wpdb->esc_like( $args['search'] ) . '%' : '';
 
 		$orderby = in_array( $args['orderby'], array( 'id', 'form_id', 'submitted_at', 'sheets_status' ), true ) ? $args['orderby'] : 'submitted_at';
 		$order   = ( 'ASC' === strtoupper( $args['order'] ) ) ? 'ASC' : 'DESC';
@@ -167,11 +157,22 @@ class CF7DBGS_DB {
 		$limit  = max( 1, absint( $args['per_page'] ) );
 		$offset = ( max( 1, absint( $args['paged'] ) ) - 1 ) * $limit;
 
-		// Dynamic WHERE: placeholders live in $where_sql with matching $vals, and
-		// $orderby / $order are strict-whitelisted literals above — safe by construction.
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i{$where_sql}", $vals ) );
-		$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i{$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", array_merge( $vals, array( $limit, $offset ) ) ) );
+		// Every query below is a literal string with explicit placeholders;
+		// $orderby / $order are strict-whitelisted literals from the lists above.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $form_id && '' !== $like ) {
+			$total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE form_id = %d AND fields LIKE %s', $table, $form_id, $like ) );
+			$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE form_id = %d AND fields LIKE %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $table, $form_id, $like, $limit, $offset ) );
+		} elseif ( $form_id ) {
+			$total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE form_id = %d', $table, $form_id ) );
+			$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE form_id = %d ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $table, $form_id, $limit, $offset ) );
+		} elseif ( '' !== $like ) {
+			$total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE fields LIKE %s', $table, $like ) );
+			$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE fields LIKE %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $table, $like, $limit, $offset ) );
+		} else {
+			$total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) );
+			$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $table, $limit, $offset ) );
+		}
 		// phpcs:enable
 
 		return array(

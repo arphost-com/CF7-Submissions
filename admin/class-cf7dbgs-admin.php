@@ -55,8 +55,8 @@ class CF7DBGS_Admin {
 	 */
 	public static function menu() {
 		add_menu_page(
-			__( 'CF7 Submissions', 'cf7-db-gsheets' ),
-			__( 'CF7 Submissions', 'cf7-db-gsheets' ),
+			__( 'CF7 Submissions', 'cf7-database-google-sheets' ),
+			__( 'CF7 Submissions', 'cf7-database-google-sheets' ),
 			self::CAPABILITY,
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' ),
@@ -66,8 +66,8 @@ class CF7DBGS_Admin {
 
 		add_submenu_page(
 			self::PAGE_SLUG,
-			__( 'Settings', 'cf7-db-gsheets' ),
-			__( 'Settings', 'cf7-db-gsheets' ),
+			__( 'Settings', 'cf7-database-google-sheets' ),
+			__( 'Settings', 'cf7-database-google-sheets' ),
 			self::CAPABILITY,
 			'cf7dbgs-settings',
 			array( __CLASS__, 'render_settings' )
@@ -106,7 +106,7 @@ class CF7DBGS_Admin {
 			$decoded = json_decode( $sa_json, true );
 			if ( empty( $decoded['client_email'] ) || empty( $decoded['private_key'] ) ) {
 				$sa_json = $existing['sa_json'];
-				add_settings_error( CF7DBGS_OPTION, 'cf7dbgs_sa_json', __( 'Service account JSON was not saved — it must contain client_email and private_key.', 'cf7-db-gsheets' ) );
+				add_settings_error( CF7DBGS_OPTION, 'cf7dbgs_sa_json', __( 'Service account JSON was not saved — it must contain client_email and private_key.', 'cf7-database-google-sheets' ) );
 			} else {
 				delete_transient( CF7DBGS_Sheets_API::TOKEN_TRANSIENT );
 			}
@@ -194,12 +194,12 @@ class CF7DBGS_Admin {
 		$total_pages = (int) ceil( $result['total'] / $per_page );
 
 		$notices = array(
-			'resent'        => array( 'success', __( 'Submission resent to Google Sheets.', 'cf7-db-gsheets' ) ),
-			'resend_failed' => array( 'error', __( 'Resend failed — check the webhook URL in Settings.', 'cf7-db-gsheets' ) ),
-			'deleted'       => array( 'success', __( 'Submission deleted.', 'cf7-db-gsheets' ) ),
+			'resent'        => array( 'success', __( 'Submission resent to Google Sheets.', 'cf7-database-google-sheets' ) ),
+			'resend_failed' => array( 'error', __( 'Resend failed — check the webhook URL in Settings.', 'cf7-database-google-sheets' ) ),
+			'deleted'       => array( 'success', __( 'Submission deleted.', 'cf7-database-google-sheets' ) ),
 		);
 
-		echo '<div class="wrap"><h1 class="wp-heading-inline">' . esc_html__( 'CF7 Submissions', 'cf7-db-gsheets' ) . '</h1>';
+		echo '<div class="wrap"><h1 class="wp-heading-inline">' . esc_html__( 'CF7 Submissions', 'cf7-database-google-sheets' ) . '</h1>';
 
 		$export_url = wp_nonce_url(
 			add_query_arg(
@@ -211,7 +211,7 @@ class CF7DBGS_Admin {
 			),
 			'cf7dbgs_export'
 		);
-		echo ' <a href="' . esc_url( $export_url ) . '" class="page-title-action">' . esc_html__( 'Export CSV', 'cf7-db-gsheets' ) . '</a><hr class="wp-header-end">';
+		echo ' <a href="' . esc_url( $export_url ) . '" class="page-title-action">' . esc_html__( 'Export CSV', 'cf7-database-google-sheets' ) . '</a><hr class="wp-header-end">';
 
 		if ( $notice && isset( $notices[ $notice ] ) ) {
 			printf(
@@ -224,7 +224,7 @@ class CF7DBGS_Admin {
 		// Filter bar.
 		echo '<form method="get" style="margin:12px 0;">';
 		echo '<input type="hidden" name="page" value="' . esc_attr( self::PAGE_SLUG ) . '">';
-		echo '<select name="form_id"><option value="0">' . esc_html__( 'All forms', 'cf7-db-gsheets' ) . '</option>';
+		echo '<select name="form_id"><option value="0">' . esc_html__( 'All forms', 'cf7-database-google-sheets' ) . '</option>';
 		foreach ( CF7DBGS_DB::forms() as $form ) {
 			printf(
 				'<option value="%1$d" %2$s>%3$s</option>',
@@ -234,22 +234,22 @@ class CF7DBGS_Admin {
 			);
 		}
 		echo '</select> ';
-		echo '<input type="search" name="s" value="' . esc_attr( $search ) . '" placeholder="' . esc_attr__( 'Search fields…', 'cf7-db-gsheets' ) . '"> ';
-		submit_button( __( 'Filter', 'cf7-db-gsheets' ), 'secondary', '', false );
+		echo '<input type="search" name="s" value="' . esc_attr( $search ) . '" placeholder="' . esc_attr__( 'Search fields…', 'cf7-database-google-sheets' ) . '"> ';
+		submit_button( __( 'Filter', 'cf7-database-google-sheets' ), 'secondary', '', false );
 		echo '</form>';
 
 		// Table.
 		echo '<table class="widefat striped"><thead><tr>';
-		echo '<th>' . esc_html__( 'ID', 'cf7-db-gsheets' ) . '</th>';
-		echo '<th>' . esc_html__( 'Date', 'cf7-db-gsheets' ) . '</th>';
-		echo '<th>' . esc_html__( 'Form', 'cf7-db-gsheets' ) . '</th>';
-		echo '<th>' . esc_html__( 'Summary', 'cf7-db-gsheets' ) . '</th>';
-		echo '<th>' . esc_html__( 'Sheets', 'cf7-db-gsheets' ) . '</th>';
-		echo '<th>' . esc_html__( 'Actions', 'cf7-db-gsheets' ) . '</th>';
+		echo '<th>' . esc_html__( 'ID', 'cf7-database-google-sheets' ) . '</th>';
+		echo '<th>' . esc_html__( 'Date', 'cf7-database-google-sheets' ) . '</th>';
+		echo '<th>' . esc_html__( 'Form', 'cf7-database-google-sheets' ) . '</th>';
+		echo '<th>' . esc_html__( 'Summary', 'cf7-database-google-sheets' ) . '</th>';
+		echo '<th>' . esc_html__( 'Sheets', 'cf7-database-google-sheets' ) . '</th>';
+		echo '<th>' . esc_html__( 'Actions', 'cf7-database-google-sheets' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		if ( ! $result['items'] ) {
-			echo '<tr><td colspan="6">' . esc_html__( 'No submissions yet.', 'cf7-db-gsheets' ) . '</td></tr>';
+			echo '<tr><td colspan="6">' . esc_html__( 'No submissions yet.', 'cf7-database-google-sheets' ) . '</td></tr>';
 		}
 
 		foreach ( $result['items'] as $row ) {
@@ -272,9 +272,9 @@ class CF7DBGS_Admin {
 			echo '<td>' . esc_html( $row->form_title ? $row->form_title : ( '#' . $row->form_id ) ) . '</td>';
 			echo '<td>' . esc_html( implode( ' | ', $summary ) ) . '</td>';
 			echo '<td>' . esc_html( $row->sheets_status ) . '</td>';
-			echo '<td><a href="' . esc_url( $view_url ) . '">' . esc_html__( 'View', 'cf7-db-gsheets' ) . '</a> | ';
-			echo '<a href="' . esc_url( $resend_url ) . '">' . esc_html__( 'Resend', 'cf7-db-gsheets' ) . '</a> | ';
-			echo '<a href="' . esc_url( $delete_url ) . '" onclick="return confirm(\'' . esc_js( __( 'Delete this submission?', 'cf7-db-gsheets' ) ) . '\');" style="color:#b32d2e;">' . esc_html__( 'Delete', 'cf7-db-gsheets' ) . '</a></td>';
+			echo '<td><a href="' . esc_url( $view_url ) . '">' . esc_html__( 'View', 'cf7-database-google-sheets' ) . '</a> | ';
+			echo '<a href="' . esc_url( $resend_url ) . '">' . esc_html__( 'Resend', 'cf7-database-google-sheets' ) . '</a> | ';
+			echo '<a href="' . esc_url( $delete_url ) . '" onclick="return confirm(\'' . esc_js( __( 'Delete this submission?', 'cf7-database-google-sheets' ) ) . '\');" style="color:#b32d2e;">' . esc_html__( 'Delete', 'cf7-database-google-sheets' ) . '</a></td>';
 			echo '</tr>';
 		}
 
@@ -307,19 +307,19 @@ class CF7DBGS_Admin {
 	public static function render_detail( $id ) {
 		$row = CF7DBGS_DB::get( $id );
 
-		echo '<div class="wrap"><h1>' . esc_html__( 'Submission', 'cf7-db-gsheets' ) . ' #' . (int) $id . '</h1>';
-		echo '<p><a href="' . esc_url( add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) ) ) . '">&larr; ' . esc_html__( 'Back to list', 'cf7-db-gsheets' ) . '</a></p>';
+		echo '<div class="wrap"><h1>' . esc_html__( 'Submission', 'cf7-database-google-sheets' ) . ' #' . (int) $id . '</h1>';
+		echo '<p><a href="' . esc_url( add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) ) ) . '">&larr; ' . esc_html__( 'Back to list', 'cf7-database-google-sheets' ) . '</a></p>';
 
 		if ( ! $row ) {
-			echo '<p>' . esc_html__( 'Not found.', 'cf7-db-gsheets' ) . '</p></div>';
+			echo '<p>' . esc_html__( 'Not found.', 'cf7-database-google-sheets' ) . '</p></div>';
 			return;
 		}
 
 		$fields = json_decode( $row->fields, true );
 
 		echo '<table class="widefat striped" style="max-width:800px;"><tbody>';
-		echo '<tr><th style="width:200px;">' . esc_html__( 'Date', 'cf7-db-gsheets' ) . '</th><td>' . esc_html( $row->submitted_at ) . '</td></tr>';
-		echo '<tr><th>' . esc_html__( 'Form', 'cf7-db-gsheets' ) . '</th><td>' . esc_html( $row->form_title ) . ' (#' . (int) $row->form_id . ')</td></tr>';
+		echo '<tr><th style="width:200px;">' . esc_html__( 'Date', 'cf7-database-google-sheets' ) . '</th><td>' . esc_html( $row->submitted_at ) . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Form', 'cf7-database-google-sheets' ) . '</th><td>' . esc_html( $row->form_title ) . ' (#' . (int) $row->form_id . ')</td></tr>';
 
 		if ( is_array( $fields ) ) {
 			foreach ( $fields as $k => $v ) {
@@ -329,15 +329,15 @@ class CF7DBGS_Admin {
 		}
 
 		if ( $row->remote_ip ) {
-			echo '<tr><th>' . esc_html__( 'IP address', 'cf7-db-gsheets' ) . '</th><td>' . esc_html( $row->remote_ip ) . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'IP address', 'cf7-database-google-sheets' ) . '</th><td>' . esc_html( $row->remote_ip ) . '</td></tr>';
 		}
 		if ( $row->user_agent ) {
-			echo '<tr><th>' . esc_html__( 'User agent', 'cf7-db-gsheets' ) . '</th><td>' . esc_html( $row->user_agent ) . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'User agent', 'cf7-database-google-sheets' ) . '</th><td>' . esc_html( $row->user_agent ) . '</td></tr>';
 		}
 
-		echo '<tr><th>' . esc_html__( 'Sheets status', 'cf7-db-gsheets' ) . '</th><td>' . esc_html( $row->sheets_status ) . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Sheets status', 'cf7-database-google-sheets' ) . '</th><td>' . esc_html( $row->sheets_status ) . '</td></tr>';
 		if ( $row->sheets_response ) {
-			echo '<tr><th>' . esc_html__( 'Sheets response', 'cf7-db-gsheets' ) . '</th><td><code>' . esc_html( $row->sheets_response ) . '</code></td></tr>';
+			echo '<tr><th>' . esc_html__( 'Sheets response', 'cf7-database-google-sheets' ) . '</th><td><code>' . esc_html( $row->sheets_response ) . '</code></td></tr>';
 		}
 
 		echo '</tbody></table></div>';
@@ -354,83 +354,83 @@ class CF7DBGS_Admin {
 		$s = cf7dbgs_get_settings();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'CF7 Database & Google Sheets — Settings', 'cf7-db-gsheets' ); ?></h1>
+			<h1><?php esc_html_e( 'CF7 Database & Google Sheets — Settings', 'cf7-database-google-sheets' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'cf7dbgs_settings_group' ); ?>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Store in database', 'cf7-db-gsheets' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Store in database', 'cf7-database-google-sheets' ); ?></th>
 						<td><label><input type="checkbox" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[store_db]" value="1" <?php checked( $s['store_db'] ); ?>>
-							<?php esc_html_e( 'Save every CF7 submission to the WordPress database', 'cf7-db-gsheets' ); ?></label></td>
+							<?php esc_html_e( 'Save every CF7 submission to the WordPress database', 'cf7-database-google-sheets' ); ?></label></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Send to Google Sheets', 'cf7-db-gsheets' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Send to Google Sheets', 'cf7-database-google-sheets' ); ?></th>
 						<td><label><input type="checkbox" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[send_webhook]" value="1" <?php checked( $s['send_webhook'] ); ?>>
-							<?php esc_html_e( 'Forward submissions to the webhook URL below', 'cf7-db-gsheets' ); ?></label></td>
+							<?php esc_html_e( 'Forward submissions to the webhook URL below', 'cf7-database-google-sheets' ); ?></label></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Delivery method', 'cf7-db-gsheets' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Delivery method', 'cf7-database-google-sheets' ); ?></th>
 						<td>
 							<label style="margin-right:16px;"><input type="radio" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheets_mode]" value="api" <?php checked( 'api', $s['sheets_mode'] ); ?>>
-								<strong><?php esc_html_e( 'Google Sheets API', 'cf7-db-gsheets' ); ?></strong> — <?php esc_html_e( 'no Apps Script needed (recommended)', 'cf7-db-gsheets' ); ?></label><br>
+								<strong><?php esc_html_e( 'Google Sheets API', 'cf7-database-google-sheets' ); ?></strong> — <?php esc_html_e( 'no Apps Script needed (recommended)', 'cf7-database-google-sheets' ); ?></label><br>
 							<label><input type="radio" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheets_mode]" value="webhook" <?php checked( 'webhook', $s['sheets_mode'] ); ?>>
-								<?php esc_html_e( 'Webhook (Google Apps Script Web App)', 'cf7-db-gsheets' ); ?></label>
+								<?php esc_html_e( 'Webhook (Google Apps Script Web App)', 'cf7-database-google-sheets' ); ?></label>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="cf7dbgs_sa_json"><?php esc_html_e( 'Service account JSON', 'cf7-db-gsheets' ); ?></label></th>
+						<th scope="row"><label for="cf7dbgs_sa_json"><?php esc_html_e( 'Service account JSON', 'cf7-database-google-sheets' ); ?></label></th>
 						<td>
-							<textarea id="cf7dbgs_sa_json" class="large-text code" rows="4" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sa_json]" placeholder="<?php echo esc_attr( $s['sa_json'] ? __( 'Saved ✓ — paste new JSON to replace, or enter “-” to clear.', 'cf7-db-gsheets' ) : __( 'Paste the downloaded JSON key file contents here', 'cf7-db-gsheets' ) ); ?>"></textarea>
+							<textarea id="cf7dbgs_sa_json" class="large-text code" rows="4" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sa_json]" placeholder="<?php echo esc_attr( $s['sa_json'] ? __( 'Saved ✓ — paste new JSON to replace, or enter “-” to clear.', 'cf7-database-google-sheets' ) : __( 'Paste the downloaded JSON key file contents here', 'cf7-database-google-sheets' ) ); ?>"></textarea>
 							<p class="description">
 								<?php
 								if ( $s['sa_json'] ) {
 									$sa = json_decode( $s['sa_json'], true );
 									printf(
 										/* translators: %s: service account email */
-										esc_html__( 'Saved. Share your spreadsheet(s) with: %s', 'cf7-db-gsheets' ),
+										esc_html__( 'Saved. Share your spreadsheet(s) with: %s', 'cf7-database-google-sheets' ),
 										'<code>' . esc_html( isset( $sa['client_email'] ) ? $sa['client_email'] : '?' ) . '</code>'
 									);
 								} else {
-									esc_html_e( 'API mode: Google Cloud Console → create a service account → add a JSON key → paste it here, then share the spreadsheet with the service account email (Editor). See readme for the 2-minute walkthrough.', 'cf7-db-gsheets' );
+									esc_html_e( 'API mode: Google Cloud Console → create a service account → add a JSON key → paste it here, then share the spreadsheet with the service account email (Editor). See readme for the 2-minute walkthrough.', 'cf7-database-google-sheets' );
 								}
 								?>
 							</p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="cf7dbgs_sheet_id"><?php esc_html_e( 'Spreadsheet ID', 'cf7-db-gsheets' ); ?></label></th>
+						<th scope="row"><label for="cf7dbgs_sheet_id"><?php esc_html_e( 'Spreadsheet ID', 'cf7-database-google-sheets' ); ?></label></th>
 						<td>
 							<input type="text" class="large-text" id="cf7dbgs_sheet_id" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheet_id]" value="<?php echo esc_attr( $s['sheet_id'] ); ?>" placeholder="1qSi477DQ_ItdEbGJE2DSAP0gH26d7a…">
-							<p class="description"><?php esc_html_e( 'API mode: the default spreadsheet — the long ID from its URL. Each form gets its own tab automatically, named after the form.', 'cf7-db-gsheets' ); ?></p>
+							<p class="description"><?php esc_html_e( 'API mode: the default spreadsheet — the long ID from its URL. Each form gets its own tab automatically, named after the form.', 'cf7-database-google-sheets' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="cf7dbgs_sheet_routes"><?php esc_html_e( 'Per-form routing', 'cf7-db-gsheets' ); ?></label></th>
+						<th scope="row"><label for="cf7dbgs_sheet_routes"><?php esc_html_e( 'Per-form routing', 'cf7-database-google-sheets' ); ?></label></th>
 						<td>
 							<textarea id="cf7dbgs_sheet_routes" class="large-text code" rows="4" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheet_routes]" placeholder="Contact Vic=Submissions&#10;Yard Sign Request=SPREADSHEET_ID!Yard Signs"><?php echo esc_textarea( $s['sheet_routes'] ); ?></textarea>
-							<p class="description"><?php esc_html_e( 'API mode, optional. One per line: Form Title=Tab Name — or Form Title=SPREADSHEET_ID!Tab Name to send a form to a different spreadsheet (share it with the service account too). Unlisted forms: default spreadsheet, tab named after the form.', 'cf7-db-gsheets' ); ?></p>
+							<p class="description"><?php esc_html_e( 'API mode, optional. One per line: Form Title=Tab Name — or Form Title=SPREADSHEET_ID!Tab Name to send a form to a different spreadsheet (share it with the service account too). Unlisted forms: default spreadsheet, tab named after the form.', 'cf7-database-google-sheets' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="cf7dbgs_webhook_url"><?php esc_html_e( 'Webhook URL', 'cf7-db-gsheets' ); ?></label></th>
+						<th scope="row"><label for="cf7dbgs_webhook_url"><?php esc_html_e( 'Webhook URL', 'cf7-database-google-sheets' ); ?></label></th>
 						<td>
 							<input type="url" class="large-text" id="cf7dbgs_webhook_url" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[webhook_url]" value="<?php echo esc_attr( $s['webhook_url'] ); ?>" placeholder="https://script.google.com/macros/s/…/exec">
-							<p class="description"><?php esc_html_e( 'Webhook mode: Google Apps Script Web App deployment URL (companion script bundled with the plugin).', 'cf7-db-gsheets' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Webhook mode: Google Apps Script Web App deployment URL (companion script bundled with the plugin).', 'cf7-database-google-sheets' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="cf7dbgs_field_map"><?php esc_html_e( 'Field mapping', 'cf7-db-gsheets' ); ?></label></th>
+						<th scope="row"><label for="cf7dbgs_field_map"><?php esc_html_e( 'Field mapping', 'cf7-database-google-sheets' ); ?></label></th>
 						<td>
 							<textarea id="cf7dbgs_field_map" class="large-text code" rows="8" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[field_map]" placeholder="First Name=firstName&#10;Last Name=lastName&#10;your-email=email"><?php echo esc_textarea( $s['field_map'] ); ?></textarea>
-							<p class="description"><?php esc_html_e( 'One mapping per line: cf7-field-name=payloadKey. Matching is forgiving — case-insensitive, spaces and underscores count as hyphens (so "First Name" matches "first-name"). Unmapped fields are sent with their original names. Lines starting with # are ignored.', 'cf7-db-gsheets' ); ?></p>
+							<p class="description"><?php esc_html_e( 'One mapping per line: cf7-field-name=payloadKey. Matching is forgiving — case-insensitive, spaces and underscores count as hyphens (so "First Name" matches "first-name"). Unmapped fields are sent with their original names. Lines starting with # are ignored.', 'cf7-database-google-sheets' ); ?></p>
 							<?php self::render_detected_fields(); ?>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Privacy', 'cf7-db-gsheets' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Privacy', 'cf7-database-google-sheets' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[store_ip]" value="1" <?php checked( $s['store_ip'] ); ?>> <?php esc_html_e( 'Store submitter IP address', 'cf7-db-gsheets' ); ?></label><br>
-							<label><input type="checkbox" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[store_ua]" value="1" <?php checked( $s['store_ua'] ); ?>> <?php esc_html_e( 'Store submitter user agent', 'cf7-db-gsheets' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[store_ip]" value="1" <?php checked( $s['store_ip'] ); ?>> <?php esc_html_e( 'Store submitter IP address', 'cf7-database-google-sheets' ); ?></label><br>
+							<label><input type="checkbox" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[store_ua]" value="1" <?php checked( $s['store_ua'] ); ?>> <?php esc_html_e( 'Store submitter user agent', 'cf7-database-google-sheets' ); ?></label>
 						</td>
 					</tr>
 				</table>
@@ -455,8 +455,8 @@ class CF7DBGS_Admin {
 		}
 
 		echo '<div style="margin-top:10px;padding:10px 14px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;max-width:640px;">';
-		echo '<strong>' . esc_html__( 'Detected Contact Form 7 fields', 'cf7-db-gsheets' ) . '</strong>';
-		echo '<p class="description" style="margin:4px 0 8px;">' . esc_html__( 'Click "Auto-map" to fill the mapping for a form automatically, or click a field name to add it by hand.', 'cf7-db-gsheets' ) . '</p>';
+		echo '<strong>' . esc_html__( 'Detected Contact Form 7 fields', 'cf7-database-google-sheets' ) . '</strong>';
+		echo '<p class="description" style="margin:4px 0 8px;">' . esc_html__( 'Click "Auto-map" to fill the mapping for a form automatically, or click a field name to add it by hand.', 'cf7-database-google-sheets' ) . '</p>';
 
 		foreach ( $forms as $form ) {
 			$fields = array();
@@ -478,7 +478,7 @@ class CF7DBGS_Admin {
 				'<button type="button" class="button button-small cf7dbgs-automap" data-form="%1$s" data-fields="%2$s">%3$s</button><br>',
 				esc_attr( $form->title() ),
 				esc_attr( wp_json_encode( $fields ) ),
-				esc_html__( 'Auto-map', 'cf7-db-gsheets' )
+				esc_html__( 'Auto-map', 'cf7-database-google-sheets' )
 			);
 			foreach ( $fields as $f ) {
 				printf(
@@ -555,7 +555,7 @@ class CF7DBGS_Admin {
 	 */
 	public static function export_csv() {
 		if ( ! current_user_can( self::CAPABILITY ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'cf7-db-gsheets' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'cf7-database-google-sheets' ) );
 		}
 		check_admin_referer( 'cf7dbgs_export' );
 
