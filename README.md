@@ -86,6 +86,7 @@ tel-269=phone
 | Symptom | Cause / fix |
 |---|---|
 | **failed — HTTP 401: Page Not Found / "Sorry, unable to open the file"** (webhook) | The deployment isn't publicly reachable. In Manage deployments set **Who has access: Anyone**, and make sure you copied the **/exec** URL from Manage deployments — not the editor's /dev test URL. Then update the URL in Settings and Resend. |
+| **failed — Failed to save to sheet / Sheet write failed** (webhook) | Usually `DEFAULT_SHEET_ID` at the top of the script is unset or wrong — set it to the long ID from the spreadsheet URL and deploy a New version. Exact reason: script editor → View → Executions. |
 | Sheets status: **failed — HTTP 400** (webhook) | Old plugin version. Update to 1.0.2+ (follows Google's redirect correctly). |
 | **failed — Script error: Missing required fields** | The deployed script is an old version that validates fields the form doesn't have. Redeploy the bundled script (Manage deployments → New version). |
 | Status says **sent** but nothing appears in the sheet | Old v1 scripts reported success even when the write failed. Redeploy the bundled script — it reports failures honestly. Then use **Resend** on the row. |

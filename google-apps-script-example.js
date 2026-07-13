@@ -57,11 +57,11 @@ function doPost(e) {
         const data = JSON.parse(e.postData.contents);
         const formTitle = asText(data.formTitle) || 'Submissions';
 
-        const saveSuccess = saveToSheet(formTitle, data);
-        const emailSuccess = RECIPIENT_EMAIL ? sendEmailNotification(formTitle, data) : true;
+        const saveResult = saveToSheet(formTitle, data);
+        if (RECIPIENT_EMAIL) { sendEmailNotification(formTitle, data); }
 
-        if (!saveSuccess) {
-            return jsonOut({ success: false, error: 'Failed to save to sheet' });
+        if (saveResult !== true) {
+            return jsonOut({ success: false, error: 'Sheet write failed: ' + saveResult });
         }
         return jsonOut({ success: true, message: 'Thank you for your submission!' });
     } catch (error) {
@@ -116,7 +116,7 @@ function saveToSheet(formTitle, data) {
         return true;
     } catch (error) {
         console.error('Error saving to sheet:', error);
-        return false;
+        return String(error); // Real reason, surfaced to WordPress.
     }
 }
 
