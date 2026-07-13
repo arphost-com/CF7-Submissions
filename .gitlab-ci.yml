@@ -1,18 +1,15 @@
-# CF7 Database & Google Sheets — WordPress plugin pipeline
-# Deploys to dev WordPress (dev.arphost.com, /var/www/arphost.com/html).
-# Production deploy is manual and final.
+# CF7 Database & Google Sheets — open-source WordPress plugin pipeline
+# No server deploys: validate -> security -> package -> manual GitHub release.
+# This plugin is not part of the ARPHost infrastructure; it ships to GitHub only.
 
 stages:
   - validate
   - security
   - package
-  - deploy
-  - smoke
-  - production
+  - release
 
 variables:
   PLUGIN_SLUG: "cf7-db-gsheets"
-  DEV_WP_PATH: "/var/www/arphost.com/html"
   GIT_DEPTH: "0"
 
 workflow:
@@ -120,47 +117,14 @@ package_plugin:
     paths:
       - "${PLUGIN_SLUG}-*.zip"
 
-deploy_dev:
-  extends: .dev_runner
-  stage: deploy
-  environment:
-    name: dev
-    url: https://dev.arphost.com
-  rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-  script:
-    # Deploy only plugin files; runtime data (DB table, settings option) is untouched.
-    - DEST="${DEV_WP_PATH}/wp-content/plugins/${PLUGIN_SLUG}"
-    - sudo -n mkdir -p "$DEST"
-    - sudo -n rsync -a --delete
-        --exclude 'languages/'
-        "${PLUGIN_SLUG}.php" uninstall.php readme.txt LICENSE.txt google-apps-script-example.js includes admin
-        "$DEST/"
-    - sudo -n chown -R www-data:www-data "$DEST"
-    - sudo -n find "$DEST" -type d -exec chmod 755 {} +
-    - sudo -n find "$DEST" -type f -exec chmod 644 {} +
-
-smoke_dev:
-  extends: .dev_runner
-  stage: smoke
-  rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-  script:
-    - sudo -n -u www-data wp --path="${DEV_WP_PATH}" plugin list --fields=name,status,version | grep "${PLUGIN_SLUG}"
-    - sudo -n -u www-data wp --path="${DEV_WP_PATH}" plugin activate "${PLUGIN_SLUG}"
-    # Verify the submissions table exists after activation.
-    - |
-      sudo -n -u www-data wp --path="${DEV_WP_PATH}" eval 'global $wpdb; $t = $wpdb->prefix . "cf7dbgs_submissions"; exit( $wpdb->get_var( "SHOW TABLES LIKE \"" . $t . "\"" ) === $t ? 0 : 1 );'
-    - echo "Plugin active and table present on dev."
-
 # Open-source release: mirrors the repo to GitHub and publishes a release
-# with the plugin zip attached. Manual and final — replaces production deploy.
-# Required CI/CD variables (Settings > CI/CD > Variables, masked):
+# with the plugin zip attached. Manual and final — the ONLY deploy target.
+# Uses the instance-level CI/CD variable:
 #   GITHUB_PAT - GitHub PAT with contents:write on the repo
 #   GITHUB_REPO  - defaults to arphost-com/CF7-Submissions
 github_release:
   extends: .dev_runner
-  stage: production
+  stage: release
   needs: [package_plugin]
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
