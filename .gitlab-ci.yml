@@ -129,7 +129,8 @@ smoke_dev:
     - sudo -n -u www-data wp --path="${DEV_WP_PATH}" plugin list --fields=name,status,version | grep "${PLUGIN_SLUG}"
     - sudo -n -u www-data wp --path="${DEV_WP_PATH}" plugin activate "${PLUGIN_SLUG}"
     # Verify the submissions table exists after activation.
-    - sudo -n -u www-data wp --path="${DEV_WP_PATH}" eval 'global $wpdb; $t = $wpdb->prefix . "cf7dbgs_submissions"; exit( $wpdb->get_var( "SHOW TABLES LIKE \"$t\"" ) === $t ? 0 : 1 );'
+    - |
+      sudo -n -u www-data wp --path="${DEV_WP_PATH}" eval 'global $wpdb; $t = $wpdb->prefix . "cf7dbgs_submissions"; exit( $wpdb->get_var( "SHOW TABLES LIKE \"" . $t . "\"" ) === $t ? 0 : 1 );'
     - echo "Plugin active and table present on dev."
 
 # Production stays manual and final. Set PROD_WP_PATH (and a production runner
