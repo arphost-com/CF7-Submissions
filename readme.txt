@@ -1,10 +1,10 @@
 === CF7 Database & Google Sheets ===
 Contributors: arphost
 Tags: contact form 7, database, google sheets, submissions, export
-Requires at least: 5.8
-Tested up to: 6.8
+Requires at least: 6.2
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -86,6 +86,9 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.1.5 =
+* Plugin Check compliance: table names now use the %i identifier placeholder in all queries (requires WordPress 6.2+), removed the deprecated load_plugin_textdomain() call, and annotated intentional custom-table queries.
 
 = 1.1.4 =
 * Improvement: sheet timestamps now include the timezone. Apps Script writes Mountain Time via a TIME_ZONE constant (e.g. "2026-07-13 08:43:21 MDT"); API mode uses the WordPress timezone setting with zone label.

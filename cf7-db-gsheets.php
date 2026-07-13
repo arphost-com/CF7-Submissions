@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name:       CF7 Database & Google Sheets
- * Plugin URI:        https://github.com/arphost/cf7-db-gsheets
+ * Plugin URI:        https://github.com/arphost-com/CF7-Submissions
  * Description:       Saves Contact Form 7 submissions to the WordPress database and optionally forwards them to a Google Sheets webhook (Google Apps Script). Includes an admin submissions browser and CSV export.
- * Version:           1.1.4
- * Requires at least: 5.8
+ * Version:           1.1.5
+ * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            ARPHost, LLC
  * Author URI:        https://arphost.com
@@ -20,7 +20,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CF7DBGS_VERSION', '1.1.4' );
+define( 'CF7DBGS_VERSION', '1.1.5' );
 define( 'CF7DBGS_PLUGIN_FILE', __FILE__ );
 define( 'CF7DBGS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CF7DBGS_OPTION', 'cf7dbgs_settings' );
@@ -68,8 +68,6 @@ add_action( 'plugins_loaded', 'cf7dbgs_bootstrap' );
  * Bootstrap the plugin once all plugins are loaded.
  */
 function cf7dbgs_bootstrap() {
-	load_plugin_textdomain( 'cf7-db-gsheets', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-
 	if ( ! defined( 'WPCF7_VERSION' ) ) {
 		add_action( 'admin_notices', 'cf7dbgs_missing_cf7_notice' );
 		return;

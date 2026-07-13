@@ -74,6 +74,7 @@ class CF7DBGS_DB {
 	public static function insert( $row ) {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- write to the plugin's own custom table.
 		$ok = $wpdb->insert(
 			self::table(),
 			array(
@@ -102,6 +103,7 @@ class CF7DBGS_DB {
 	public static function set_sheets_status( $id, $status, $response = '' ) {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- write to the plugin's own custom table.
 		$wpdb->update(
 			self::table(),
 			array(
@@ -122,9 +124,8 @@ class CF7DBGS_DB {
 	 */
 	public static function get( $id ) {
 		global $wpdb;
-		$table = self::table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", absint( $id ) ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table; row is fetched fresh on demand.
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::table(), absint( $id ) ) );
 	}
 
 	/**
@@ -146,9 +147,8 @@ class CF7DBGS_DB {
 		);
 		$args     = wp_parse_args( $args, $defaults );
 
-		$table = self::table();
-		$where = array( '1=1' );
-		$vals  = array();
+		$where = array();
+		$vals  = array( self::table() ); // First %i placeholder.
 
 		if ( $args['form_id'] ) {
 			$where[] = 'form_id = %d';
@@ -159,7 +159,7 @@ class CF7DBGS_DB {
 			$vals[]  = '%' . $wpdb->esc_like( $args['search'] ) . '%';
 		}
 
-		$where_sql = implode( ' AND ', $where );
+		$where_sql = $where ? ' WHERE ' . implode( ' AND ', $where ) : '';
 
 		$orderby = in_array( $args['orderby'], array( 'id', 'form_id', 'submitted_at', 'sheets_status' ), true ) ? $args['orderby'] : 'submitted_at';
 		$order   = ( 'ASC' === strtoupper( $args['order'] ) ) ? 'ASC' : 'DESC';
@@ -167,14 +167,11 @@ class CF7DBGS_DB {
 		$limit  = max( 1, absint( $args['per_page'] ) );
 		$offset = ( max( 1, absint( $args['paged'] ) ) - 1 ) * $limit;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( $vals ) {
-			$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", $vals ) );
-			$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", array_merge( $vals, array( $limit, $offset ) ) ) );
-		} else {
-			$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
-			$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $limit, $offset ) );
-		}
+		// Dynamic WHERE: placeholders live in $where_sql with matching $vals, and
+		// $orderby / $order are strict-whitelisted literals above — safe by construction.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i{$where_sql}", $vals ) );
+		$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i{$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", array_merge( $vals, array( $limit, $offset ) ) ) );
 		// phpcs:enable
 
 		return array(
@@ -197,10 +194,10 @@ class CF7DBGS_DB {
 			return 0;
 		}
 
-		$table        = self::table();
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE id IN ({$placeholders})", $ids ) );
+		// $placeholders is only a run of literal %d markers sized to $ids — safe by construction.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE id IN ({$placeholders})", array_merge( array( self::table() ), $ids ) ) );
 	}
 
 	/**
@@ -210,9 +207,8 @@ class CF7DBGS_DB {
 	 */
 	public static function forms() {
 		global $wpdb;
-		$table = self::table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( "SELECT form_id, MAX(form_title) AS form_title FROM {$table} GROUP BY form_id ORDER BY form_title" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table; small aggregate for admin filter dropdown.
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT form_id, MAX(form_title) AS form_title FROM %i GROUP BY form_id ORDER BY form_title', self::table() ) );
 		return $rows ? $rows : array();
 	}
 }

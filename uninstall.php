@@ -9,8 +9,9 @@ defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 global $wpdb;
 
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}cf7dbgs_submissions" );
+// Removing the plugin's own custom table on uninstall is the expected cleanup.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'cf7dbgs_submissions' ) );
 
 delete_option( 'cf7dbgs_settings' );
 delete_option( 'cf7dbgs_db_version' );
