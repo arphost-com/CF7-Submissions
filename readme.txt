@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.9
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -86,6 +86,12 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.1.9 =
+* Fix: text domain reverted (again) to `cf7-database-google-sheets` — this is the canonical slug going forward (matches the plugin's readable name and is what WordPress Playground / Plugin Check expects). The plugin's packaged folder and zip are now also named `cf7-database-google-sheets` to match, so the slug is consistent everywhere. The GitLab project/repo itself stays named `cf7-db-gsheets` — only the WordPress-facing plugin slug changed.
+
+= 1.1.8 =
+* Fix: text domain reverted to `cf7-db-gsheets` (matches the actual plugin slug at the time) — resolved Plugin Check errors on dev.arphost.com, but broke it on WordPress Playground/Plugin Check (which expects `cf7-database-google-sheets`). Superseded by 1.1.9.
 
 = 1.1.7 =
 * Annotated the whitelisted ORDER BY columns for Plugin Check (documented false positive; $orderby is limited to four hardcoded column names).

@@ -2,7 +2,7 @@
 /**
  * Admin UI: submissions list, detail view, settings, CSV export.
  *
- * @package cf7-db-gsheets
+ * @package cf7-database-google-sheets
  */
 
 defined( 'ABSPATH' ) || exit;

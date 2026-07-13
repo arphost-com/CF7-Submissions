@@ -9,7 +9,14 @@ stages:
   - release
 
 variables:
-  PLUGIN_SLUG: "cf7-db-gsheets"
+  # MAIN_FILE is the actual main plugin PHP filename in this repo (unchanged
+  # historically — renaming it would break activation on existing installs).
+  # PLUGIN_SLUG is the WordPress-facing slug: it must match the Text Domain
+  # header and becomes the folder name inside the packaged zip, since
+  # WordPress Plugin Check compares Text Domain against the install folder
+  # name. Keep these in sync with cf7-db-gsheets.php's Text Domain header.
+  MAIN_FILE: "cf7-db-gsheets.php"
+  PLUGIN_SLUG: "cf7-database-google-sheets"
   GIT_DEPTH: "0"
 
 workflow:
@@ -31,11 +38,15 @@ php_lint:
         "$PHP_BIN" -l "$f" || exit 1
       done
     - |
-      HEADER_VERSION=$(grep -E '^\s*\*\s*Version:' "${PLUGIN_SLUG}.php" | awk '{print $NF}')
-      CONST_VERSION=$(grep -oE "CF7DBGS_VERSION', '[0-9.]+" "${PLUGIN_SLUG}.php" | grep -oE '[0-9.]+$')
+      HEADER_VERSION=$(grep -E '^\s*\*\s*Version:' "${MAIN_FILE}" | awk '{print $NF}')
+      CONST_VERSION=$(grep -oE "CF7DBGS_VERSION', '[0-9.]+" "${MAIN_FILE}" | grep -oE '[0-9.]+$')
       STABLE_TAG=$(grep -E '^Stable tag:' readme.txt | awk '{print $NF}')
       echo "Header=${HEADER_VERSION} Const=${CONST_VERSION} StableTag=${STABLE_TAG}"
       [ "$HEADER_VERSION" = "$CONST_VERSION" ] && [ "$HEADER_VERSION" = "$STABLE_TAG" ] || { echo "Version mismatch"; exit 1; }
+    - |
+      TEXT_DOMAIN=$(grep -E '^\s*\*\s*Text Domain:' "${MAIN_FILE}" | awk '{print $NF}')
+      echo "TextDomain=${TEXT_DOMAIN} PLUGIN_SLUG=${PLUGIN_SLUG}"
+      [ "$TEXT_DOMAIN" = "$PLUGIN_SLUG" ] || { echo "Text Domain does not match PLUGIN_SLUG — Plugin Check will flag this wherever the plugin folder is named \${PLUGIN_SLUG}"; exit 1; }
 
 semgrep_sast:
   extends: .dev_runner
@@ -107,10 +118,10 @@ package_plugin:
   extends: .dev_runner
   stage: package
   script:
-    - VERSION=$(grep -E '^\s*\*\s*Version:' "${PLUGIN_SLUG}.php" | awk '{print $NF}')
-    - echo "Packaging ${PLUGIN_SLUG} ${VERSION}"
+    - VERSION=$(grep -E '^\s*\*\s*Version:' "${MAIN_FILE}" | awk '{print $NF}')
+    - echo "Packaging ${PLUGIN_SLUG} ${VERSION} (main file ${MAIN_FILE})"
     - rm -rf build && mkdir -p "build/${PLUGIN_SLUG}"
-    - cp -r "${PLUGIN_SLUG}.php" uninstall.php readme.txt LICENSE.txt google-apps-script-example.js includes admin "build/${PLUGIN_SLUG}/"
+    - cp -r "${MAIN_FILE}" uninstall.php readme.txt LICENSE.txt google-apps-script-example.js includes admin "build/${PLUGIN_SLUG}/"
     - cd build && zip -rq "../${PLUGIN_SLUG}-${VERSION}.zip" "${PLUGIN_SLUG}"
   artifacts:
     expire_in: 1 week
@@ -135,7 +146,7 @@ github_release:
   script:
     - '[ -n "$GITHUB_PAT" ] || { echo "GITHUB_PAT CI variable not set — refusing to release."; exit 1; }'
     - GITHUB_REPO="${GITHUB_REPO:-arphost-com/CF7-Submissions}"
-    - VERSION=$(grep -E '^\s*\*\s*Version:' "${PLUGIN_SLUG}.php" | awk '{print $NF}')
+    - VERSION=$(grep -E '^\s*\*\s*Version:' "${MAIN_FILE}" | awk '{print $NF}')
     - TAG="v${VERSION}"
     - ZIP="${PLUGIN_SLUG}-${VERSION}.zip"
     - '[ -f "$ZIP" ] || { echo "Package artifact ${ZIP} missing"; exit 1; }'
