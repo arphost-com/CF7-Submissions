@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,9 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.0.8 =
+* Docs: bundled Apps Script example is now a multi-form/multi-sheet router — per-form tabs (auto-created) plus optional ROUTES config to send any form to a custom tab name or a completely different spreadsheet.
 
 = 1.0.7 =
 * UI: the submissions list and detail views now show human-friendly field labels ("First Name", "Email", "Phone") instead of raw CF7 field names ("first-name", "your-email", "tel-269"). Uses your field map, then humanizes.
