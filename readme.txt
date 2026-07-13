@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,10 @@ The left side must still correspond to the CF7 field *name* (the name inside the
 
 Checkbox fields with multiple selections are sent as JSON arrays; single-value fields are sent as plain strings.
 
+= Adding a new form later =
+
+Nothing special is required. Every payload carries `formTitle`/`formId`, and the companion Apps Script creates a new sheet tab (named after the form) with columns built from the fields automatically. Optionally add field-map lines if you want friendlier payload keys — the Settings page lists each form's detected fields.
+
 == Frequently Asked Questions ==
 
 = Does it capture submissions if the email fails to send? =
@@ -73,6 +77,9 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.0.5 =
+* Feature: every webhook payload now includes formTitle and formId, so one webhook can serve many forms (e.g. one Google Sheet tab per form). Resends include them too.
 
 = 1.0.4 =
 * Feature: forgiving field-map matching — "First Name" now matches the CF7 field "first-name" (case-insensitive; spaces and underscores count as hyphens).

@@ -18,9 +18,10 @@ class CF7DBGS_Webhook {
 	 * @param array                  $fields       Cleaned posted fields.
 	 * @param WPCF7_ContactForm|null $contact_form Form object (null on resend).
 	 * @param int|false              $row_id       DB row ID for status tracking, or false.
+	 * @param array                  $form_meta    Optional form_title/form_id (used on resend).
 	 * @return bool Success.
 	 */
-	public static function send( $fields, $contact_form = null, $row_id = false ) {
+	public static function send( $fields, $contact_form = null, $row_id = false, $form_meta = array() ) {
 		$settings = cf7dbgs_get_settings();
 		$url      = esc_url_raw( $settings['webhook_url'] );
 
@@ -29,6 +30,16 @@ class CF7DBGS_Webhook {
 		}
 
 		$payload = self::map_fields( $fields, $settings['field_map'] );
+
+		// Identify the source form so multi-form webhooks can route
+		// submissions (e.g. one Google Sheet tab per form).
+		if ( $contact_form && method_exists( $contact_form, 'title' ) ) {
+			$payload['formTitle'] = $contact_form->title();
+			$payload['formId']   = $contact_form->id();
+		} elseif ( ! empty( $form_meta['form_title'] ) ) {
+			$payload['formTitle'] = $form_meta['form_title'];
+			$payload['formId']   = isset( $form_meta['form_id'] ) ? (int) $form_meta['form_id'] : 0;
+		}
 
 		/**
 		 * Filter the JSON payload sent to the webhook.
@@ -117,7 +128,15 @@ class CF7DBGS_Webhook {
 			return false;
 		}
 
-		return self::send( $fields, null, $row_id );
+		return self::send(
+			$fields,
+			null,
+			$row_id,
+			array(
+				'form_title' => $row->form_title,
+				'form_id'    => $row->form_id,
+			)
+		);
 	}
 
 	/**
