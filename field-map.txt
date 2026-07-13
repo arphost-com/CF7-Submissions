@@ -1,0 +1,6 @@
+first-name=firstName
+last-name=lastName
+your-email=email
+tel-269=phone
+volunteer=volunteers
+yard-sign=yardSign
