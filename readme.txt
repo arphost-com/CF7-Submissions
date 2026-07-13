@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.1.1 =
+* Fix: Cloudflare Turnstile, hCaptcha, and other captcha tokens are no longer stored or sent to Sheets (previously only reCAPTCHA was excluded).
 
 = 1.1.0 =
 * Feature: direct Google Sheets API mode — no Apps Script required. Paste a service-account JSON key, share the sheet with the service account, done. Auto-creates one tab per form, manages columns, supports per-form routing to custom tabs or entirely different spreadsheets from the Settings screen. Webhook mode remains available.

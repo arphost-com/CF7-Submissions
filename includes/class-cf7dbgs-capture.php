@@ -92,9 +92,11 @@ class CF7DBGS_Capture {
 	public static function clean_fields( $posted ) {
 		$fields = array();
 
+		$skip = array( 'g-recaptcha-response', 'cf-turnstile-response', 'h-captcha-response', 'frc-captcha-response' );
+
 		foreach ( (array) $posted as $key => $value ) {
-			// Skip CF7/recaptcha internals.
-			if ( 0 === strpos( $key, '_wpcf7' ) || 0 === strpos( $key, '_' ) || 'g-recaptcha-response' === $key ) {
+			// Skip CF7 internals and captcha tokens (recaptcha, Turnstile, hCaptcha…).
+			if ( 0 === strpos( $key, '_' ) || in_array( $key, $skip, true ) || false !== strpos( $key, 'captcha' ) ) {
 				continue;
 			}
 
