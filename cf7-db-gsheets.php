@@ -3,7 +3,7 @@
  * Plugin Name:       CF7 Database & Google Sheets
  * Plugin URI:        https://github.com/arphost/cf7-db-gsheets
  * Description:       Saves Contact Form 7 submissions to the WordPress database and optionally forwards them to a Google Sheets webhook (Google Apps Script). Includes an admin submissions browser and CSV export.
- * Version:           1.0.8
+ * Version:           1.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            ARPHost, LLC
@@ -20,7 +20,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CF7DBGS_VERSION', '1.0.8' );
+define( 'CF7DBGS_VERSION', '1.1.0' );
 define( 'CF7DBGS_PLUGIN_FILE', __FILE__ );
 define( 'CF7DBGS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CF7DBGS_OPTION', 'cf7dbgs_settings' );
@@ -28,6 +28,7 @@ define( 'CF7DBGS_OPTION', 'cf7dbgs_settings' );
 require_once CF7DBGS_PLUGIN_DIR . 'includes/class-cf7dbgs-db.php';
 require_once CF7DBGS_PLUGIN_DIR . 'includes/class-cf7dbgs-capture.php';
 require_once CF7DBGS_PLUGIN_DIR . 'includes/class-cf7dbgs-webhook.php';
+require_once CF7DBGS_PLUGIN_DIR . 'includes/class-cf7dbgs-sheets-api.php';
 
 register_activation_hook( __FILE__, array( 'CF7DBGS_DB', 'install' ) );
 
@@ -38,12 +39,16 @@ register_activation_hook( __FILE__, array( 'CF7DBGS_DB', 'install' ) );
  */
 function cf7dbgs_default_settings() {
 	return array(
-		'store_db'       => 1,
-		'send_webhook'   => 0,
-		'webhook_url'    => '',
-		'field_map'      => '',
-		'store_ip'       => 0,
-		'store_ua'       => 0,
+		'store_db'     => 1,
+		'send_webhook' => 0,
+		'sheets_mode'  => 'webhook', // webhook | api
+		'webhook_url'  => '',
+		'sa_json'      => '',
+		'sheet_id'     => '',
+		'sheet_routes' => '',
+		'field_map'    => '',
+		'store_ip'     => 0,
+		'store_ua'     => 0,
 	);
 }
 

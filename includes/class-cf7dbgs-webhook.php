@@ -25,7 +25,8 @@ class CF7DBGS_Webhook {
 		$settings = cf7dbgs_get_settings();
 		$url      = esc_url_raw( $settings['webhook_url'] );
 
-		if ( ! $url ) {
+		if ( ! $url && 'api' !== $settings['sheets_mode'] ) {
+			self::record( $row_id, 'failed', 'No webhook URL configured in Settings.' );
 			return false;
 		}
 
@@ -49,6 +50,11 @@ class CF7DBGS_Webhook {
 		 * @param WPCF7_ContactForm|null $contact_form Form object or null.
 		 */
 		$payload = apply_filters( 'cf7dbgs_webhook_payload', $payload, $fields, $contact_form );
+
+		// Google Sheets API mode: talk to Sheets directly, no Apps Script.
+		if ( 'api' === $settings['sheets_mode'] ) {
+			return CF7DBGS_Sheets_API::deliver( $payload, $row_id );
+		}
 
 		$args = array(
 			'timeout'     => 15, // Apps Script cold starts can exceed 8s.

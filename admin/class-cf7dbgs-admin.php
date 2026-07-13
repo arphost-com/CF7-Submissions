@@ -92,11 +92,34 @@ class CF7DBGS_Admin {
 	 * @return array
 	 */
 	public static function sanitize_settings( $input ) {
-		$input = is_array( $input ) ? $input : array();
+		$input    = is_array( $input ) ? $input : array();
+		$existing = cf7dbgs_get_settings();
+
+		// Keep the saved service-account JSON when the field is left blank,
+		// so saving other settings never wipes credentials.
+		$sa_json = isset( $input['sa_json'] ) ? trim( (string) $input['sa_json'] ) : '';
+		if ( '' === $sa_json ) {
+			$sa_json = $existing['sa_json'];
+		} elseif ( '-' === $sa_json ) {
+			$sa_json = ''; // Enter a single dash to clear saved credentials.
+		} else {
+			$decoded = json_decode( $sa_json, true );
+			if ( empty( $decoded['client_email'] ) || empty( $decoded['private_key'] ) ) {
+				$sa_json = $existing['sa_json'];
+				add_settings_error( CF7DBGS_OPTION, 'cf7dbgs_sa_json', __( 'Service account JSON was not saved — it must contain client_email and private_key.', 'cf7-db-gsheets' ) );
+			} else {
+				delete_transient( CF7DBGS_Sheets_API::TOKEN_TRANSIENT );
+			}
+		}
+
 		return array(
 			'store_db'     => empty( $input['store_db'] ) ? 0 : 1,
 			'send_webhook' => empty( $input['send_webhook'] ) ? 0 : 1,
+			'sheets_mode'  => ( isset( $input['sheets_mode'] ) && 'api' === $input['sheets_mode'] ) ? 'api' : 'webhook',
 			'webhook_url'  => isset( $input['webhook_url'] ) ? esc_url_raw( trim( $input['webhook_url'] ) ) : '',
+			'sa_json'      => $sa_json,
+			'sheet_id'     => isset( $input['sheet_id'] ) ? sanitize_text_field( $input['sheet_id'] ) : '',
+			'sheet_routes' => isset( $input['sheet_routes'] ) ? sanitize_textarea_field( $input['sheet_routes'] ) : '',
 			'field_map'    => isset( $input['field_map'] ) ? sanitize_textarea_field( $input['field_map'] ) : '',
 			'store_ip'     => empty( $input['store_ip'] ) ? 0 : 1,
 			'store_ua'     => empty( $input['store_ua'] ) ? 0 : 1,
@@ -346,10 +369,53 @@ class CF7DBGS_Admin {
 							<?php esc_html_e( 'Forward submissions to the webhook URL below', 'cf7-db-gsheets' ); ?></label></td>
 					</tr>
 					<tr>
+						<th scope="row"><?php esc_html_e( 'Delivery method', 'cf7-db-gsheets' ); ?></th>
+						<td>
+							<label style="margin-right:16px;"><input type="radio" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheets_mode]" value="api" <?php checked( 'api', $s['sheets_mode'] ); ?>>
+								<strong><?php esc_html_e( 'Google Sheets API', 'cf7-db-gsheets' ); ?></strong> — <?php esc_html_e( 'no Apps Script needed (recommended)', 'cf7-db-gsheets' ); ?></label><br>
+							<label><input type="radio" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheets_mode]" value="webhook" <?php checked( 'webhook', $s['sheets_mode'] ); ?>>
+								<?php esc_html_e( 'Webhook (Google Apps Script Web App)', 'cf7-db-gsheets' ); ?></label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="cf7dbgs_sa_json"><?php esc_html_e( 'Service account JSON', 'cf7-db-gsheets' ); ?></label></th>
+						<td>
+							<textarea id="cf7dbgs_sa_json" class="large-text code" rows="4" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sa_json]" placeholder="<?php echo esc_attr( $s['sa_json'] ? __( 'Saved ✓ — paste new JSON to replace, or enter “-” to clear.', 'cf7-db-gsheets' ) : '{ "type": "service_account", ... }' ); ?>"></textarea>
+							<p class="description">
+								<?php
+								if ( $s['sa_json'] ) {
+									$sa = json_decode( $s['sa_json'], true );
+									printf(
+										/* translators: %s: service account email */
+										esc_html__( 'Saved. Share your spreadsheet(s) with: %s', 'cf7-db-gsheets' ),
+										'<code>' . esc_html( isset( $sa['client_email'] ) ? $sa['client_email'] : '?' ) . '</code>'
+									);
+								} else {
+									esc_html_e( 'API mode: Google Cloud Console → create a service account → add a JSON key → paste it here, then share the spreadsheet with the service account email (Editor). See readme for the 2-minute walkthrough.', 'cf7-db-gsheets' );
+								}
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="cf7dbgs_sheet_id"><?php esc_html_e( 'Spreadsheet ID', 'cf7-db-gsheets' ); ?></label></th>
+						<td>
+							<input type="text" class="large-text" id="cf7dbgs_sheet_id" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheet_id]" value="<?php echo esc_attr( $s['sheet_id'] ); ?>" placeholder="1qSi477DQ_ItdEbGJE2DSAP0gH26d7a…">
+							<p class="description"><?php esc_html_e( 'API mode: the default spreadsheet — the long ID from its URL. Each form gets its own tab automatically, named after the form.', 'cf7-db-gsheets' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="cf7dbgs_sheet_routes"><?php esc_html_e( 'Per-form routing', 'cf7-db-gsheets' ); ?></label></th>
+						<td>
+							<textarea id="cf7dbgs_sheet_routes" class="large-text code" rows="4" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sheet_routes]" placeholder="Contact Vic=Submissions&#10;Yard Sign Request=SPREADSHEET_ID!Yard Signs"><?php echo esc_textarea( $s['sheet_routes'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'API mode, optional. One per line: Form Title=Tab Name — or Form Title=SPREADSHEET_ID!Tab Name to send a form to a different spreadsheet (share it with the service account too). Unlisted forms: default spreadsheet, tab named after the form.', 'cf7-db-gsheets' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="cf7dbgs_webhook_url"><?php esc_html_e( 'Webhook URL', 'cf7-db-gsheets' ); ?></label></th>
 						<td>
 							<input type="url" class="large-text" id="cf7dbgs_webhook_url" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[webhook_url]" value="<?php echo esc_attr( $s['webhook_url'] ); ?>" placeholder="https://script.google.com/macros/s/…/exec">
-							<p class="description"><?php esc_html_e( 'Google Apps Script Web App deployment URL (see readme for the companion script).', 'cf7-db-gsheets' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Webhook mode: Google Apps Script Web App deployment URL (companion script bundled with the plugin).', 'cf7-db-gsheets' ); ?></p>
 						</td>
 					</tr>
 					<tr>

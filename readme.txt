@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.8
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,7 +40,16 @@ IP address and user-agent storage are **off by default**. Enable them in Setting
 2. Activate the plugin. Contact Form 7 must be active.
 3. Submissions are stored in the database immediately. Find them under **CF7 Submissions** in the admin menu.
 
-= Google Sheets setup (optional) =
+= Google Sheets setup — API mode, no Apps Script (recommended) =
+
+1. Go to https://console.cloud.google.com → create (or pick) a project → APIs & Services → enable the **Google Sheets API**.
+2. IAM & Admin → Service Accounts → Create service account (any name, no roles needed) → Keys → Add key → JSON. A .json file downloads.
+3. In WordPress: **CF7 Submissions → Settings** — choose *Google Sheets API*, paste the JSON file's contents into *Service account JSON*, and put your spreadsheet's ID in *Spreadsheet ID*.
+4. Open the Google Sheet → Share → add the service account's email (shown on the settings page after saving) as **Editor**.
+
+That's it. Each form gets its own tab automatically. Use *Per-form routing* to rename tabs or send a form to a different spreadsheet (`Form Title=Tab` or `Form Title=SPREADSHEET_ID!Tab`).
+
+= Google Sheets setup — webhook mode (Apps Script) =
 
 1. Create a Google Sheet with a tab named `Submissions`.
 2. Go to script.google.com, create a project, and paste in `google-apps-script-example.js` (bundled with this plugin). Set your `SHEET_ID`.
@@ -77,6 +86,9 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.1.0 =
+* Feature: direct Google Sheets API mode — no Apps Script required. Paste a service-account JSON key, share the sheet with the service account, done. Auto-creates one tab per form, manages columns, supports per-form routing to custom tabs or entirely different spreadsheets from the Settings screen. Webhook mode remains available.
 
 = 1.0.8 =
 * Docs: bundled Apps Script example is now a multi-form/multi-sheet router — per-form tabs (auto-created) plus optional ROUTES config to send any form to a custom tab name or a completely different spreadsheet.
