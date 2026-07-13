@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +73,9 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.0.3 =
+* Fix: single-value arrays from CF7 select fields (e.g. state) are flattened to scalars in the webhook payload — Apps Script appendRow() fails silently on array values.
 
 = 1.0.2 =
 * Fix: Google rejected webhook posts with HTTP 400 — WP re-POSTs to the Apps Script 302 redirect target, which only accepts GET. The redirect is now followed manually with GET.

@@ -144,7 +144,15 @@ class CF7DBGS_Webhook {
 
 		$payload = array();
 		foreach ( $fields as $key => $value ) {
-			$out_key             = isset( $map[ $key ] ) ? $map[ $key ] : $key;
+			$out_key = isset( $map[ $key ] ) ? $map[ $key ] : $key;
+
+			// CF7 selects post single values as one-element arrays, which
+			// break Apps Script sheet.appendRow(). Flatten them; real
+			// multi-value arrays (checkboxes) are kept as arrays.
+			if ( is_array( $value ) && count( $value ) <= 1 ) {
+				$value = $value ? reset( $value ) : '';
+			}
+
 			$payload[ $out_key ] = $value;
 		}
 
