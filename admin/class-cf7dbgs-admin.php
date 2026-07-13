@@ -16,6 +16,31 @@ class CF7DBGS_Admin {
 	const PAGE_SLUG  = 'cf7dbgs-submissions';
 
 	/**
+	 * Human-friendly label for a stored field key.
+	 * Uses the field map ("first-name" -> "firstName"), then humanizes
+	 * the result: "firstName" -> "First Name", "your-email" -> "Email".
+	 *
+	 * @param string $key Raw CF7 field name.
+	 * @return string
+	 */
+	public static function field_label( $key ) {
+		static $map = null;
+		if ( null === $map ) {
+			$settings = cf7dbgs_get_settings();
+			$map      = CF7DBGS_Webhook::parse_map( $settings['field_map'] );
+		}
+
+		$norm  = CF7DBGS_Webhook::normalize_key( $key );
+		$label = isset( $map[ $norm ] ) ? $map[ $norm ] : $key;
+
+		// camelCase -> spaced words; hyphens/underscores -> spaces.
+		$label = preg_replace( '/(?<=[a-z0-9])([A-Z])/', ' $1', $label );
+		$label = str_replace( array( '-', '_' ), ' ', $label );
+
+		return ucwords( trim( $label ) );
+	}
+
+	/**
 	 * Register hooks.
 	 */
 	public static function init() {
@@ -210,7 +235,7 @@ class CF7DBGS_Admin {
 			if ( is_array( $fields ) ) {
 				foreach ( array_slice( $fields, 0, 3, true ) as $k => $v ) {
 					$v         = is_array( $v ) ? implode( ', ', $v ) : $v;
-					$summary[] = $k . ': ' . wp_html_excerpt( $v, 40, '…' );
+					$summary[] = self::field_label( $k ) . ': ' . wp_html_excerpt( $v, 40, '…' );
 				}
 			}
 
@@ -276,7 +301,7 @@ class CF7DBGS_Admin {
 		if ( is_array( $fields ) ) {
 			foreach ( $fields as $k => $v ) {
 				$v = is_array( $v ) ? implode( ', ', $v ) : $v;
-				echo '<tr><th>' . esc_html( $k ) . '</th><td>' . nl2br( esc_html( $v ) ) . '</td></tr>';
+				echo '<tr><th>' . esc_html( self::field_label( $k ) ) . '</th><td>' . nl2br( esc_html( $v ) ) . '</td></tr>';
 			}
 		}
 

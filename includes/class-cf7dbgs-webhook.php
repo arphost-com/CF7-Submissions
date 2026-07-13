@@ -148,21 +148,7 @@ class CF7DBGS_Webhook {
 	 * @return array
 	 */
 	public static function map_fields( $fields, $map_text ) {
-		$map = array();
-
-		foreach ( preg_split( '/[\r\n]+/', (string) $map_text ) as $line ) {
-			$line = trim( $line );
-			if ( '' === $line || false === strpos( $line, '=' ) || 0 === strpos( $line, '#' ) ) {
-				continue;
-			}
-			list( $from, $to ) = array_map( 'trim', explode( '=', $line, 2 ) );
-			if ( '' !== $from && '' !== $to ) {
-				// Store under a normalized key so friendly names work:
-				// "First Name" matches the CF7 field "first-name".
-				$map[ self::normalize_key( $from ) ] = $to;
-			}
-		}
-
+		$map     = self::parse_map( $map_text );
 		$payload = array();
 		foreach ( $fields as $key => $value ) {
 			$norm    = self::normalize_key( $key );
@@ -179,6 +165,31 @@ class CF7DBGS_Webhook {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Parse mapping text into array( normalized-cf7-name => payloadKey ).
+	 *
+	 * @param string $map_text Raw mapping text from settings.
+	 * @return array
+	 */
+	public static function parse_map( $map_text ) {
+		$map = array();
+
+		foreach ( preg_split( '/[\r\n]+/', (string) $map_text ) as $line ) {
+			$line = trim( $line );
+			if ( '' === $line || false === strpos( $line, '=' ) || 0 === strpos( $line, '#' ) ) {
+				continue;
+			}
+			list( $from, $to ) = array_map( 'trim', explode( '=', $line, 2 ) );
+			if ( '' !== $from && '' !== $to ) {
+				// Store under a normalized key so friendly names work:
+				// "First Name" matches the CF7 field "first-name".
+				$map[ self::normalize_key( $from ) ] = $to;
+			}
+		}
+
+		return $map;
 	}
 
 	/**
