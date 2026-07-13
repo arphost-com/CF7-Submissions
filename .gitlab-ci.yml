@@ -156,7 +156,7 @@ smoke_dev:
 # Open-source release: mirrors the repo to GitHub and publishes a release
 # with the plugin zip attached. Manual and final — replaces production deploy.
 # Required CI/CD variables (Settings > CI/CD > Variables, masked):
-#   GITHUB_TOKEN - GitHub PAT with contents:write on the repo
+#   GITHUB_PAT - GitHub PAT with contents:write on the repo
 #   GITHUB_REPO  - defaults to arphost-com/CF7-Submissions
 github_release:
   extends: .dev_runner
@@ -169,17 +169,17 @@ github_release:
     name: github
     url: https://github.com/arphost-com/CF7-Submissions/releases
   script:
-    - '[ -n "$GITHUB_TOKEN" ] || { echo "GITHUB_TOKEN CI variable not set — refusing to release."; exit 1; }'
+    - '[ -n "$GITHUB_PAT" ] || { echo "GITHUB_PAT CI variable not set — refusing to release."; exit 1; }'
     - GITHUB_REPO="${GITHUB_REPO:-arphost-com/CF7-Submissions}"
     - VERSION=$(grep -E '^\s*\*\s*Version:' "${PLUGIN_SLUG}.php" | awk '{print $NF}')
     - TAG="v${VERSION}"
     - ZIP="${PLUGIN_SLUG}-${VERSION}.zip"
     - '[ -f "$ZIP" ] || { echo "Package artifact ${ZIP} missing"; exit 1; }'
     # Mirror main to GitHub (never prints the token).
-    - git push --quiet "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" "HEAD:refs/heads/main"
+    - git push --quiet "https://x-access-token:${GITHUB_PAT}@github.com/${GITHUB_REPO}.git" "HEAD:refs/heads/main"
     # Create the release for this version (idempotent: reuse if the tag exists).
     - |
-      AUTH="Authorization: Bearer ${GITHUB_TOKEN}"
+      AUTH="Authorization: Bearer ${GITHUB_PAT}"
       API="https://api.github.com/repos/${GITHUB_REPO}"
       RELEASE_ID=$(curl -sf -H "$AUTH" "${API}/releases/tags/${TAG}" | grep -m1 '"id":' | grep -oE '[0-9]+' | head -1 || true)
       if [ -z "$RELEASE_ID" ]; then
