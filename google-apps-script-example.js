@@ -25,6 +25,9 @@
  * NEW URL and WordPress keeps posting to the old one.)
  */
 
+// Timezone for the Timestamp column (IANA name).
+const TIME_ZONE = 'America/Denver'; // Mountain Time
+
 function doPost(e) {
     try {
         const data = JSON.parse(e.postData.contents);
@@ -59,9 +62,11 @@ function doPost(e) {
             }
         }
 
-        // Append the row, aligned to headers.
+        // Append the row, aligned to headers. Timestamp includes the zone,
+        // e.g. "2026-07-13 08:43:21 MDT".
+        const stamp = Utilities.formatDate(new Date(), TIME_ZONE, 'yyyy-MM-dd HH:mm:ss z');
         sheet.appendRow(headers.map(function (h) {
-            return h === 'Timestamp' ? new Date() : text(data[h]);
+            return h === 'Timestamp' ? stamp : text(data[h]);
         }));
 
         return out({ success: true, message: 'Saved to tab "' + tabName + '"' });
@@ -83,7 +88,7 @@ function out(obj) {
         .setMimeType(ContentService.MimeType.JSON);
 }
 
-/** Health check: open the /exec URL in a browser, should show version 5. */
+/** Health check: open the /exec URL in a browser, should show version 6. */
 function doGet() {
-    return out({ status: 'ok', version: 5 });
+    return out({ status: 'ok', version: 6, timeZone: TIME_ZONE });
 }

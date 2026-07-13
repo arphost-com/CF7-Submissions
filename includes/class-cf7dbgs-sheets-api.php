@@ -246,7 +246,8 @@ class CF7DBGS_Sheets_API {
 		$row = array();
 		foreach ( $headers as $h ) {
 			if ( 'Timestamp' === $h ) {
-				$row[] = current_time( 'mysql' );
+				// WP timezone (Settings > General) with zone label, e.g. "2026-07-13 08:43:21 MDT".
+				$row[] = function_exists( 'wp_date' ) ? wp_date( 'Y-m-d H:i:s T' ) : current_time( 'mysql' );
 				continue;
 			}
 			$v     = isset( $data[ $h ] ) ? $data[ $h ] : '';
