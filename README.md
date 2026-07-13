@@ -99,3 +99,7 @@ tel-269=phone
 | Submission missing entirely | Check CF7 Submissions list — if it's there, the problem is delivery (see rows above). If not, the form never validated/submitted. |
 
 Every submission is stored in WordPress **before** any Google delivery, so nothing is ever lost — fix the connection and hit **Resend**.
+
+## License
+
+GPLv3 or later — see [LICENSE.txt](LICENSE.txt).

@@ -153,22 +153,43 @@ smoke_dev:
       sudo -n -u www-data wp --path="${DEV_WP_PATH}" eval 'global $wpdb; $t = $wpdb->prefix . "cf7dbgs_submissions"; exit( $wpdb->get_var( "SHOW TABLES LIKE \"" . $t . "\"" ) === $t ? 0 : 1 );'
     - echo "Plugin active and table present on dev."
 
-# Production stays manual and final. Set PROD_WP_PATH (and a production runner
-# tag) as CI/CD variables when a production WordPress target exists.
-deploy_production:
+# Open-source release: mirrors the repo to GitHub and publishes a release
+# with the plugin zip attached. Manual and final — replaces production deploy.
+# Required CI/CD variables (Settings > CI/CD > Variables, masked):
+#   GITHUB_TOKEN - GitHub PAT with contents:write on the repo
+#   GITHUB_REPO  - defaults to arphost-com/CF7-Submissions
+github_release:
   extends: .dev_runner
   stage: production
-  when: manual
+  needs: [package_plugin]
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: manual
   environment:
-    name: production
+    name: github
+    url: https://github.com/arphost-com/CF7-Submissions/releases
   script:
-    - '[ -n "$PROD_WP_PATH" ] || { echo "PROD_WP_PATH CI variable not set — refusing to deploy."; exit 1; }'
-    - DEST="${PROD_WP_PATH}/wp-content/plugins/${PLUGIN_SLUG}"
-    - sudo -n mkdir -p "$DEST"
-    - sudo -n rsync -a --delete
-        "${PLUGIN_SLUG}.php" uninstall.php readme.txt LICENSE.txt google-apps-script-example.js includes admin
-        "$DEST/"
-    - sudo -n chown -R www-data:www-data "$DEST"
+    - '[ -n "$GITHUB_TOKEN" ] || { echo "GITHUB_TOKEN CI variable not set — refusing to release."; exit 1; }'
+    - GITHUB_REPO="${GITHUB_REPO:-arphost-com/CF7-Submissions}"
+    - VERSION=$(grep -E '^\s*\*\s*Version:' "${PLUGIN_SLUG}.php" | awk '{print $NF}')
+    - TAG="v${VERSION}"
+    - ZIP="${PLUGIN_SLUG}-${VERSION}.zip"
+    - '[ -f "$ZIP" ] || { echo "Package artifact ${ZIP} missing"; exit 1; }'
+    # Mirror main to GitHub (never prints the token).
+    - git push --quiet "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" "HEAD:refs/heads/main"
+    # Create the release for this version (idempotent: reuse if the tag exists).
+    - |
+      AUTH="Authorization: Bearer ${GITHUB_TOKEN}"
+      API="https://api.github.com/repos/${GITHUB_REPO}"
+      RELEASE_ID=$(curl -sf -H "$AUTH" "${API}/releases/tags/${TAG}" | grep -m1 '"id":' | grep -oE '[0-9]+' | head -1 || true)
+      if [ -z "$RELEASE_ID" ]; then
+        RELEASE_ID=$(curl -sf -X POST -H "$AUTH" \
+          -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"target_commitish\":\"main\",\"generate_release_notes\":true}" \
+          "${API}/releases" | grep -m1 '"id":' | grep -oE '[0-9]+' | head -1)
+      fi
+      [ -n "$RELEASE_ID" ] || { echo "Could not create or find release ${TAG}"; exit 1; }
+      echo "Release ${TAG} id=${RELEASE_ID}"
+      curl -s -X POST -H "$AUTH" -H "Content-Type: application/zip" \
+        --data-binary @"${ZIP}" \
+        "https://uploads.github.com/repos/${GITHUB_REPO}/releases/${RELEASE_ID}/assets?name=${ZIP}" \
+        -o /dev/null -w "asset upload HTTP %{http_code}\n"

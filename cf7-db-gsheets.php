@@ -8,13 +8,13 @@
  * Requires PHP:      7.4
  * Author:            ARPHost, LLC
  * Author URI:        https://arphost.com
- * License:           GPLv2 or later
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * License:           GPLv3 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain:       cf7-db-gsheets
  *
  * CF7 Database & Google Sheets is free software: you can redistribute it
  * and/or modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, either version 2 of the
+ * published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
  */
 
