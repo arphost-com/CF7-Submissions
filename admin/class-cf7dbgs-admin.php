@@ -380,7 +380,7 @@ class CF7DBGS_Admin {
 					<tr>
 						<th scope="row"><label for="cf7dbgs_sa_json"><?php esc_html_e( 'Service account JSON', 'cf7-db-gsheets' ); ?></label></th>
 						<td>
-							<textarea id="cf7dbgs_sa_json" class="large-text code" rows="4" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sa_json]" placeholder="<?php echo esc_attr( $s['sa_json'] ? __( 'Saved ✓ — paste new JSON to replace, or enter “-” to clear.', 'cf7-db-gsheets' ) : '{ "type": "service_account", ... }' ); ?>"></textarea>
+							<textarea id="cf7dbgs_sa_json" class="large-text code" rows="4" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[sa_json]" placeholder="<?php echo esc_attr( $s['sa_json'] ? __( 'Saved ✓ — paste new JSON to replace, or enter “-” to clear.', 'cf7-db-gsheets' ) : __( 'Paste the downloaded JSON key file contents here', 'cf7-db-gsheets' ) ); ?>"></textarea>
 							<p class="description">
 								<?php
 								if ( $s['sa_json'] ) {
