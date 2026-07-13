@@ -50,19 +50,20 @@ If a form uses a different spreadsheet, share that one with the service account 
 
 ## Option B: Apps Script webhook
 
-1. Create a Google Sheet. Copy its ID from the URL.
-2. Go to https://script.google.com → **New project** → delete the sample code → paste in `google-apps-script-example.js` (bundled with this plugin).
-3. Set `DEFAULT_SHEET_ID` at the top to your sheet's ID.
-4. **Deploy → New deployment → Web app**:
+No spreadsheet ID, no configuration — the script lives inside your sheet.
+
+1. Open your Google Sheet → **Extensions → Apps Script**.
+2. Delete the sample code, paste in `google-apps-script-example.js` (bundled with this plugin), Save.
+3. **Deploy → New deployment →** gear icon **→ Web app**:
    - Execute as: **Me**
-   - Who has access: **Anyone**
-   - Deploy, authorize when asked, copy the **Web app URL**.
-5. **CF7 Submissions → Settings**:
+   - Who has access: **Anyone** ← must be "Anyone"
+   - Deploy, authorize with your Google account, copy the **Web app URL** (ends in `/exec`).
+4. **CF7 Submissions → Settings**:
    - Check **Send to Google Sheets**
    - Delivery method: **Webhook**
    - **Webhook URL**: paste the URL → Save.
 
-Each form gets its own tab automatically. To customize tabs/spreadsheets, edit the `ROUTES` block at the top of the script.
+Each form gets its own tab automatically — add new forms in WordPress and new tabs just appear. Any script error is reported back into the submission's "Sheets response" column, so you never need the script's Executions page.
 
 > ⚠️ **Editing the script later?** Use **Deploy → Manage deployments → ✏️ → Version: "New version" → Deploy**.
 > Do NOT use "New deployment" — that creates a NEW URL while WordPress keeps posting to the old one, and your changes silently never take effect.

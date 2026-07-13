@@ -1,140 +1,89 @@
 /**
- * Companion Google Apps Script for the CF7 Database & Google Sheets plugin.
- * Multi-form / multi-sheet router.
+ * UNIVERSAL FORMS → SHEET SCRIPT (v5)
+ * Works with ANY Contact Form 7 form, automatically. No configuration.
  *
- * SETUP:
- * 1. Create a Google Sheet and copy its ID from the URL.
- * 2. At https://script.google.com create a project and paste this file in.
- * 3. Set DEFAULT_SHEET_ID below.
- * 4. Deploy > New deployment > Web app:
- *    - Execute as: Me
- *    - Who has access: Anyone
- * 5. Copy the deployment URL into the plugin settings
- *    (WP Admin > CF7 Submissions > Settings > Webhook URL).
+ * SETUP (2 minutes, no spreadsheet ID needed):
+ * 1. Open your Google Sheet.
+ * 2. Extensions → Apps Script (this creates a script INSIDE the sheet).
+ * 3. Delete the sample code, paste this whole file, click Save.
+ * 4. Deploy → New deployment → gear icon → Web app:
+ *      Execute as: Me
+ *      Who has access: Anyone        ← must be "Anyone"
+ *    Click Deploy, authorize with your Google account when asked.
+ * 5. Copy the Web app URL (ends in /exec) into
+ *    WP Admin → CF7 Submissions → Settings → Webhook URL.
  *
- * ROUTING:
- * The plugin (v1.0.5+) sends formTitle with every submission. Each form
- * gets its own tab, named after the form and created automatically, with
- * columns built from the submission's fields. To customize, add entries
- * to ROUTES — per-form tab names and/or entirely different spreadsheets.
- * Adding a new CF7 form in WordPress needs NO changes here.
+ * HOW IT WORKS:
+ * - Each form gets its own tab, named after the form, created automatically.
+ * - Columns are created from the form's fields; new fields = new columns.
+ * - Add a new form in WordPress → a new tab appears. Nothing to edit here.
+ * - Any error is sent back to WordPress and shown in the submission's
+ *   "Sheets response" — no need to dig through script logs.
  *
- * UPDATING LATER: Deploy > Manage deployments > Edit (pencil) >
- * Version: "New version" > Deploy. (A "New deployment" would change the
- * URL — WordPress would keep posting to the old code.)
+ * EDITING LATER: Deploy → Manage deployments → pencil ✏ →
+ * Version: "New version" → Deploy. (Never "New deployment" — that makes a
+ * NEW URL and WordPress keeps posting to the old one.)
  */
-
-// CONFIGURATION
-const DEFAULT_SHEET_ID = 'PASTE_YOUR_SHEET_ID_HERE';
-
-// Optional: email each submission somewhere. Leave blank to disable.
-const RECIPIENT_EMAIL = '';
-
-/**
- * ROUTES — where each form's submissions go. Key = CF7 form title.
- *   tab:     tab name (created automatically if missing)
- *   sheetId: a DIFFERENT spreadsheet's ID. Omit to use DEFAULT_SHEET_ID.
- *            The script's account must have edit access to that sheet.
- * Forms not listed here: DEFAULT_SHEET_ID, tab named after the form.
- *
- * Examples:
- *   'Contact Us':        { tab: 'Submissions' },
- *   'Yard Sign Request': { tab: 'Yard Signs', sheetId: '1AbC...xyz' },
- */
-const ROUTES = {};
-
-// Payload keys that should not become sheet columns.
-const META_KEYS = ['formTitle', 'formId'];
-
-function asText(v) {
-    if (v === undefined || v === null) return '';
-    if (Array.isArray(v)) return v.join(', ');
-    return String(v);
-}
 
 function doPost(e) {
     try {
         const data = JSON.parse(e.postData.contents);
-        const formTitle = asText(data.formTitle) || 'Submissions';
 
-        const saveResult = saveToSheet(formTitle, data);
-        if (RECIPIENT_EMAIL) { sendEmailNotification(formTitle, data); }
-
-        if (saveResult !== true) {
-            return jsonOut({ success: false, error: 'Sheet write failed: ' + saveResult });
+        // The spreadsheet this script is attached to — no ID needed.
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        if (!ss) {
+            throw new Error('Not attached to a spreadsheet. Create this script via Extensions > Apps Script inside your Google Sheet.');
         }
-        return jsonOut({ success: true, message: 'Thank you for your submission!' });
-    } catch (error) {
-        console.error('Error processing form:', error);
-        return jsonOut({ success: false, error: error.toString() });
-    }
-}
 
-function jsonOut(obj) {
-    return ContentService.createTextOutput(JSON.stringify(obj))
-        .setMimeType(ContentService.MimeType.JSON);
-}
+        // One tab per form, named after the form title.
+        const tabName = text(data.formTitle) || 'Submissions';
+        const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
 
-/** Get (or create) the tab for a form, honoring ROUTES overrides. */
-function sheetFor(formTitle) {
-    const route = ROUTES[formTitle] || {};
-    const ss = SpreadsheetApp.openById(route.sheetId || DEFAULT_SHEET_ID);
-    const name = route.tab || formTitle;
-    let sheet = ss.getSheetByName(name);
-    if (!sheet) {
-        sheet = ss.insertSheet(name);
-    }
-    return sheet;
-}
+        // Field keys (skip plugin metadata).
+        const keys = Object.keys(data).filter(function (k) {
+            return k !== 'formTitle' && k !== 'formId';
+        });
 
-/** Append a submission; headers/columns are managed automatically. */
-function saveToSheet(formTitle, data) {
-    try {
-        const sheet = sheetFor(formTitle);
-        const keys = Object.keys(data).filter(function (k) { return META_KEYS.indexOf(k) === -1; });
-
+        // Header row: create on first submission, extend when fields appear.
         let headers;
         if (sheet.getLastRow() === 0) {
             headers = ['Timestamp'].concat(keys);
             sheet.appendRow(headers);
             sheet.setFrozenRows(1);
         } else {
-            headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(asText);
+            headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(text);
+            const newKeys = keys.filter(function (k) { return headers.indexOf(k) === -1; });
+            if (newKeys.length) {
+                sheet.getRange(1, headers.length + 1, 1, newKeys.length).setValues([newKeys]);
+                headers = headers.concat(newKeys);
+            }
         }
 
-        const newKeys = keys.filter(function (k) { return headers.indexOf(k) === -1; });
-        if (newKeys.length) {
-            sheet.getRange(1, headers.length + 1, 1, newKeys.length).setValues([newKeys]);
-            headers = headers.concat(newKeys);
-        }
+        // Append the row, aligned to headers.
+        sheet.appendRow(headers.map(function (h) {
+            return h === 'Timestamp' ? new Date() : text(data[h]);
+        }));
 
-        const row = headers.map(function (h) {
-            if (h === 'Timestamp') return new Date();
-            return asText(data[h]);
-        });
-        sheet.appendRow(row);
-        return true;
-    } catch (error) {
-        console.error('Error saving to sheet:', error);
-        return String(error); // Real reason, surfaced to WordPress.
+        return out({ success: true, message: 'Saved to tab "' + tabName + '"' });
+    } catch (err) {
+        // Full error goes back to WordPress — visible in "Sheets response".
+        return out({ success: false, error: String(err) });
     }
 }
 
-function sendEmailNotification(formTitle, data) {
-    try {
-        let body = '==== NEW SUBMISSION: ' + formTitle + ' ====\n\n';
-        Object.keys(data).forEach(function (k) {
-            if (META_KEYS.indexOf(k) !== -1) return;
-            body += k + ': ' + (asText(data[k]) || '(empty)') + '\n';
-        });
-        GmailApp.sendEmail(RECIPIENT_EMAIL, 'New form submission: ' + formTitle, body);
-        return true;
-    } catch (error) {
-        console.error('Error sending email:', error);
-        return false;
-    }
+/** Any value → clean cell text (arrays joined, null → ''). */
+function text(v) {
+    if (v === undefined || v === null) return '';
+    if (Array.isArray(v)) return v.join(', ');
+    return String(v);
 }
 
+function out(obj) {
+    return ContentService.createTextOutput(JSON.stringify(obj))
+        .setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Health check: open the /exec URL in a browser, should show version 5. */
 function doGet() {
-    return jsonOut({ status: 'ok', router: true });
+    return out({ status: 'ok', version: 5 });
 }
