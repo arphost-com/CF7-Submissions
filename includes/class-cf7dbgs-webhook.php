@@ -41,7 +41,11 @@ class CF7DBGS_Webhook {
 
 		$args = array(
 			'timeout'     => 15, // Apps Script cold starts can exceed 8s.
-			'redirection' => 5,  // Apps Script responds with a 302 redirect.
+			// Do NOT auto-follow: Apps Script 302-redirects to
+			// script.googleusercontent.com, which only accepts GET. WP's HTTP
+			// library re-POSTs there and Google answers 400. We follow the
+			// redirect manually with GET below.
+			'redirection' => 0,
 			'headers'     => array( 'Content-Type' => 'application/json; charset=utf-8' ),
 			'body'        => wp_json_encode( $payload ),
 		);
@@ -63,6 +67,20 @@ class CF7DBGS_Webhook {
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = wp_remote_retrieve_body( $response );
+
+		// Follow the Apps Script redirect manually with GET.
+		if ( in_array( $code, array( 301, 302, 303, 307, 308 ), true ) ) {
+			$location = wp_remote_retrieve_header( $response, 'location' );
+			if ( $location ) {
+				$response = wp_remote_get( $location, array( 'timeout' => 15 ) );
+				if ( is_wp_error( $response ) ) {
+					self::record( $row_id, 'failed', $response->get_error_message() );
+					return false;
+				}
+				$code = (int) wp_remote_retrieve_response_code( $response );
+				$body = wp_remote_retrieve_body( $response );
+			}
+		}
 
 		if ( $code < 200 || $code >= 300 ) {
 			self::record( $row_id, 'failed', 'HTTP ' . $code . ': ' . $body );
