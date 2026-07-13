@@ -157,9 +157,11 @@ class CF7DBGS_DB {
 		$limit  = max( 1, absint( $args['per_page'] ) );
 		$offset = ( max( 1, absint( $args['paged'] ) ) - 1 ) * $limit;
 
-		// Every query below is a literal string with explicit placeholders;
-		// $orderby / $order are strict-whitelisted literals from the lists above.
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Every query below is a literal string with explicit placeholders.
+		// $orderby is restricted by the in_array() whitelist above to one of four
+		// hardcoded column names and $order to ASC|DESC — they can never carry
+		// user input, so interpolating them is safe by construction.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		if ( $form_id && '' !== $like ) {
 			$total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE form_id = %d AND fields LIKE %s', $table, $form_id, $like ) );
 			$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE form_id = %d AND fields LIKE %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $table, $form_id, $like, $limit, $offset ) );
