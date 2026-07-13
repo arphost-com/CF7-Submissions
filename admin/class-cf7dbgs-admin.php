@@ -365,26 +365,35 @@ class CF7DBGS_Admin {
 
 		echo '<div style="margin-top:10px;padding:10px 14px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;max-width:640px;">';
 		echo '<strong>' . esc_html__( 'Detected Contact Form 7 fields', 'cf7-db-gsheets' ) . '</strong>';
-		echo '<p class="description" style="margin:4px 0 8px;">' . esc_html__( 'Use these names on the left side of a mapping. Click a name to append it to the box above.', 'cf7-db-gsheets' ) . '</p>';
+		echo '<p class="description" style="margin:4px 0 8px;">' . esc_html__( 'Click "Auto-map" to fill the mapping for a form automatically, or click a field name to add it by hand.', 'cf7-db-gsheets' ) . '</p>';
 
 		foreach ( $forms as $form ) {
-			$names = array();
+			$fields = array();
 			foreach ( $form->scan_form_tags() as $tag ) {
 				if ( empty( $tag->name ) || 'submit' === $tag->basetype ) {
 					continue;
 				}
-				$names[ $tag->name ] = $tag->basetype;
+				$fields[] = array(
+					'name' => $tag->name,
+					'type' => $tag->basetype,
+				);
 			}
-			if ( ! $names ) {
+			if ( ! $fields ) {
 				continue;
 			}
 
-			echo '<p style="margin:6px 0;"><em>' . esc_html( $form->title() ) . ':</em><br>';
-			foreach ( $names as $name => $type ) {
+			echo '<p style="margin:6px 0;"><em>' . esc_html( $form->title() ) . ':</em> ';
+			printf(
+				'<button type="button" class="button button-small cf7dbgs-automap" data-form="%1$s" data-fields="%2$s">%3$s</button><br>',
+				esc_attr( $form->title() ),
+				esc_attr( wp_json_encode( $fields ) ),
+				esc_html__( 'Auto-map', 'cf7-db-gsheets' )
+			);
+			foreach ( $fields as $f ) {
 				printf(
 					'<code class="cf7dbgs-field" data-field="%1$s" style="cursor:pointer;margin:2px 6px 2px 0;display:inline-block;" title="%2$s">%1$s</code>',
-					esc_attr( $name ),
-					esc_attr( $type )
+					esc_attr( $f['name'] ),
+					esc_attr( $f['type'] )
 				);
 			}
 			echo '</p>';
@@ -393,15 +402,59 @@ class CF7DBGS_Admin {
 		echo '</div>';
 		?>
 		<script>
-		document.addEventListener('click', function (e) {
-			if (!e.target.classList || !e.target.classList.contains('cf7dbgs-field')) { return; }
-			var ta = document.getElementById('cf7dbgs_field_map');
-			if (!ta) { return; }
-			var field = e.target.getAttribute('data-field');
-			ta.value = (ta.value.replace(/\s+$/, '') + '\n' + field + '=').replace(/^\n/, '');
-			ta.focus();
-			ta.setSelectionRange(ta.value.length, ta.value.length);
-		});
+		(function () {
+			var ta = function () { return document.getElementById('cf7dbgs_field_map'); };
+
+			// Suggest a payload key from a CF7 field name + type.
+			function suggest(name, type) {
+				if (type === 'email') { return 'email'; }
+				if (type === 'tel') { return 'phone'; }
+				var n = name.toLowerCase()
+					.replace(/^your[-_]/, '')   // your-message -> message
+					.replace(/[-_]\d+$/, '');   // checkbox-123 -> checkbox
+				return n.split(/[-_\s]+/).map(function (p, i) {
+					return i ? p.charAt(0).toUpperCase() + p.slice(1) : p;
+				}).join('');
+			}
+
+			function normalize(k) { return k.toLowerCase().trim().replace(/[\s_]+/g, '-'); }
+
+			function existingKeys() {
+				var keys = {};
+				ta().value.split(/\n/).forEach(function (line) {
+					line = line.trim();
+					if (!line || line.indexOf('#') === 0 || line.indexOf('=') === -1) { return; }
+					keys[normalize(line.split('=')[0])] = true;
+				});
+				return keys;
+			}
+
+			document.addEventListener('click', function (e) {
+				var t = e.target;
+				if (t.classList && t.classList.contains('cf7dbgs-automap')) {
+					var fields = JSON.parse(t.getAttribute('data-fields'));
+					var have = existingKeys();
+					var lines = [];
+					fields.forEach(function (f) {
+						if (have[normalize(f.name)]) { return; }       // already mapped
+						var key = suggest(f.name, f.type);
+						if (key === f.name) { return; }                 // passthrough, no line needed
+						lines.push(f.name + '=' + key);
+					});
+					if (lines.length) {
+						var header = '# ' + t.getAttribute('data-form');
+						ta().value = (ta().value.replace(/\s+$/, '') + '\n' + header + '\n' + lines.join('\n')).replace(/^\n/, '');
+					}
+					ta().focus();
+					return;
+				}
+				if (t.classList && t.classList.contains('cf7dbgs-field')) {
+					ta().value = (ta().value.replace(/\s+$/, '') + '\n' + t.getAttribute('data-field') + '=').replace(/^\n/, '');
+					ta().focus();
+					ta().setSelectionRange(ta().value.length, ta().value.length);
+				}
+			});
+		})();
 		</script>
 		<?php
 	}

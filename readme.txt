@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,9 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.0.6 =
+* Feature: "Auto-map" button per form in Settings — reads the form's fields from Contact Form 7 and fills the mapping automatically (email fields → email, tel fields → phone, "your-" prefixes stripped, names camelCased). Fields already mapped or needing no rename are skipped.
 
 = 1.0.5 =
 * Feature: every webhook payload now includes formTitle and formId, so one webhook can serve many forms (e.g. one Google Sheet tab per form). Resends include them too.
