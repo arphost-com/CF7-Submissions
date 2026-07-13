@@ -138,13 +138,16 @@ class CF7DBGS_Webhook {
 			}
 			list( $from, $to ) = array_map( 'trim', explode( '=', $line, 2 ) );
 			if ( '' !== $from && '' !== $to ) {
-				$map[ $from ] = $to;
+				// Store under a normalized key so friendly names work:
+				// "First Name" matches the CF7 field "first-name".
+				$map[ self::normalize_key( $from ) ] = $to;
 			}
 		}
 
 		$payload = array();
 		foreach ( $fields as $key => $value ) {
-			$out_key = isset( $map[ $key ] ) ? $map[ $key ] : $key;
+			$norm    = self::normalize_key( $key );
+			$out_key = isset( $map[ $norm ] ) ? $map[ $norm ] : $key;
 
 			// CF7 selects post single values as one-element arrays, which
 			// break Apps Script sheet.appendRow(). Flatten them; real
@@ -157,6 +160,18 @@ class CF7DBGS_Webhook {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Normalize a field-map key for forgiving matching:
+	 * lowercase, spaces/underscores treated as hyphens.
+	 * "First Name", "first_name", and "first-name" all match.
+	 *
+	 * @param string $key Raw key.
+	 * @return string
+	 */
+	public static function normalize_key( $key ) {
+		return preg_replace( '/[\s_]+/', '-', strtolower( trim( (string) $key ) ) );
 	}
 
 	/**

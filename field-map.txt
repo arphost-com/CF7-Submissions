@@ -1,6 +1,11 @@
-first-name=firstName
-last-name=lastName
+# Field map for the "Contact Vic" form — paste into
+# CF7 Submissions > Settings > Field mapping.
+# Left side = CF7 field name (forgiving: "First Name" matches "first-name").
+# Right side = key the Google Apps Script expects.
+# city, state, comments pass through unchanged — no line needed.
+First Name=firstName
+Last Name=lastName
 your-email=email
 tel-269=phone
-volunteer=volunteers
-yard-sign=yardSign
+Volunteer=volunteers
+Yard Sign=yardSign

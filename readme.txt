@@ -4,7 +4,7 @@ Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,17 +46,17 @@ IP address and user-agent storage are **off by default**. Enable them in Setting
 2. Go to script.google.com, create a project, and paste in `google-apps-script-example.js` (bundled with this plugin). Set your `SHEET_ID`.
 3. Deploy → New deployment → Web app → Execute as *you*, access *Anyone*. Copy the deployment URL.
 4. In WordPress: **CF7 Submissions → Settings** — enable *Send to Google Sheets* and paste the URL.
-5. Optionally add a field mapping so your CF7 field names become friendlier payload keys, e.g.:
+5. Optionally add a field mapping so your CF7 field names become friendlier payload keys. Matching is forgiving: case-insensitive, and spaces/underscores count as hyphens — so `First Name` matches the CF7 field `first-name`:
 
-    first-name=firstName
-    last-name=lastName
+    First Name=firstName
+    Last Name=lastName
     your-email=email
-    your-city=city
-    your-state=state
-    your-message=comments
-    volunteer=volunteers
+    Volunteer=volunteers
+    Yard Sign=yardSign
 
-Checkbox fields are sent as JSON arrays.
+The left side must still correspond to the CF7 field *name* (the name inside the form tag, e.g. `[email* your-email]` is `your-email`), not the visible label.
+
+Checkbox fields with multiple selections are sent as JSON arrays; single-value fields are sent as plain strings.
 
 == Frequently Asked Questions ==
 
@@ -73,6 +73,10 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
 == Changelog ==
+
+= 1.0.4 =
+* Feature: forgiving field-map matching — "First Name" now matches the CF7 field "first-name" (case-insensitive; spaces and underscores count as hyphens).
+* Feature: the Settings page now lists every Contact Form 7 form's detected field names; click a field to add it to the mapping box.
 
 = 1.0.3 =
 * Fix: single-value arrays from CF7 select fields (e.g. state) are flattened to scalars in the webhook payload — Apps Script appendRow() fails silently on array values.

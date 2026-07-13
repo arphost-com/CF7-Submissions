@@ -330,8 +330,9 @@ class CF7DBGS_Admin {
 					<tr>
 						<th scope="row"><label for="cf7dbgs_field_map"><?php esc_html_e( 'Field mapping', 'cf7-db-gsheets' ); ?></label></th>
 						<td>
-							<textarea id="cf7dbgs_field_map" class="large-text code" rows="8" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[field_map]" placeholder="first-name=firstName&#10;last-name=lastName&#10;your-email=email"><?php echo esc_textarea( $s['field_map'] ); ?></textarea>
-							<p class="description"><?php esc_html_e( 'One mapping per line: cf7-field-name=payloadKey. Unmapped fields are sent with their original names. Lines starting with # are ignored.', 'cf7-db-gsheets' ); ?></p>
+							<textarea id="cf7dbgs_field_map" class="large-text code" rows="8" name="<?php echo esc_attr( CF7DBGS_OPTION ); ?>[field_map]" placeholder="First Name=firstName&#10;Last Name=lastName&#10;your-email=email"><?php echo esc_textarea( $s['field_map'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'One mapping per line: cf7-field-name=payloadKey. Matching is forgiving — case-insensitive, spaces and underscores count as hyphens (so "First Name" matches "first-name"). Unmapped fields are sent with their original names. Lines starting with # are ignored.', 'cf7-db-gsheets' ); ?></p>
+							<?php self::render_detected_fields(); ?>
 						</td>
 					</tr>
 					<tr>
@@ -345,6 +346,63 @@ class CF7DBGS_Admin {
 				<?php submit_button(); ?>
 			</form>
 		</div>
+		<?php
+	}
+
+	/**
+	 * List every CF7 form's field names so users can build the mapping
+	 * without guessing. Fields are read live from Contact Form 7.
+	 */
+	public static function render_detected_fields() {
+		if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
+			return;
+		}
+
+		$forms = WPCF7_ContactForm::find( array( 'posts_per_page' => 50 ) );
+		if ( ! $forms ) {
+			return;
+		}
+
+		echo '<div style="margin-top:10px;padding:10px 14px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;max-width:640px;">';
+		echo '<strong>' . esc_html__( 'Detected Contact Form 7 fields', 'cf7-db-gsheets' ) . '</strong>';
+		echo '<p class="description" style="margin:4px 0 8px;">' . esc_html__( 'Use these names on the left side of a mapping. Click a name to append it to the box above.', 'cf7-db-gsheets' ) . '</p>';
+
+		foreach ( $forms as $form ) {
+			$names = array();
+			foreach ( $form->scan_form_tags() as $tag ) {
+				if ( empty( $tag->name ) || 'submit' === $tag->basetype ) {
+					continue;
+				}
+				$names[ $tag->name ] = $tag->basetype;
+			}
+			if ( ! $names ) {
+				continue;
+			}
+
+			echo '<p style="margin:6px 0;"><em>' . esc_html( $form->title() ) . ':</em><br>';
+			foreach ( $names as $name => $type ) {
+				printf(
+					'<code class="cf7dbgs-field" data-field="%1$s" style="cursor:pointer;margin:2px 6px 2px 0;display:inline-block;" title="%2$s">%1$s</code>',
+					esc_attr( $name ),
+					esc_attr( $type )
+				);
+			}
+			echo '</p>';
+		}
+
+		echo '</div>';
+		?>
+		<script>
+		document.addEventListener('click', function (e) {
+			if (!e.target.classList || !e.target.classList.contains('cf7dbgs-field')) { return; }
+			var ta = document.getElementById('cf7dbgs_field_map');
+			if (!ta) { return; }
+			var field = e.target.getAttribute('data-field');
+			ta.value = (ta.value.replace(/\s+$/, '') + '\n' + field + '=').replace(/^\n/, '');
+			ta.focus();
+			ta.setSelectionRange(ta.value.length, ta.value.length);
+		});
+		</script>
 		<?php
 	}
 
