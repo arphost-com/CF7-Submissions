@@ -2,7 +2,7 @@
 /**
  * Uninstall: remove the submissions table and options.
  *
- * @package cf7-db-gsheets
+ * @package arphost-cf7-submission-archive
  */
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;

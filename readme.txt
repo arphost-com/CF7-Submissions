@@ -1,10 +1,11 @@
-=== CF7 Database & Google Sheets ===
-Contributors: arphost
+=== ARPHost CF7 Submission Archive ===
+Contributors: hostalot
 Tags: contact form 7, database, google sheets, submissions, export
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.9
+Requires Plugins: contact-form-7
+Stable tag: 1.2.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +13,7 @@ Save Contact Form 7 submissions to your WordPress database and forward them to G
 
 == Description ==
 
-CF7 Database & Google Sheets captures every Contact Form 7 submission and:
+ARPHost CF7 Submission Archive captures every Contact Form 7 submission and:
 
 * Stores it in a dedicated database table (survives mail delivery failures — capture happens before mail is sent)
 * Optionally forwards it as JSON to a Google Apps Script Web App, which appends it to a Google Sheet
@@ -36,7 +37,7 @@ IP address and user-agent storage are **off by default**. Enable them in Setting
 
 == Installation ==
 
-1. Upload the `cf7-db-gsheets` folder to `/wp-content/plugins/`, or install the zip via Plugins → Add New → Upload.
+1. Upload the `arphost-cf7-submission-archive` folder to `/wp-content/plugins/`, or install the zip via Plugins → Add New → Upload.
 2. Activate the plugin. Contact Form 7 must be active.
 3. Submissions are stored in the database immediately. Find them under **CF7 Submissions** in the admin menu.
 
@@ -85,7 +86,34 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
+== External services ==
+
+This plugin connects to Google services to forward Contact Form 7 submissions to a Google Sheet. Both connections are **off by default** (Settings → *Send to Google Sheets*) and use *your own* Google account/spreadsheet — no data passes through any ARPHost server.
+
+= Google Sheets API (recommended mode) =
+
+When *Delivery method* is set to *Google Sheets API*, the plugin sends a submission's mapped field values directly to the Google Sheets API (`sheets.googleapis.com`) using a Google Cloud service account you create and paste into Settings. Before that, it exchanges the service account's key for a short-lived OAuth2 access token via Google's token endpoint (`oauth2.googleapis.com`).
+
+* What is sent: the submission's mapped field values (plus `formTitle`/`formId`), sent as a new row appended to the spreadsheet/tab you configured. Anti-spam/captcha tokens (reCAPTCHA, hCaptcha, Turnstile) are stripped before sending. For authentication, a signed JWT derived from your own service-account credentials is sent to obtain the access token — no data is sent to any third party you did not configure.
+* When it's sent: immediately after a matching Contact Form 7 submission (if enabled), or when an admin manually clicks "Resend" on a stored submission.
+* Service: Google Sheets API / Google Cloud Platform, operated by Google LLC. [Terms of Service](https://developers.google.com/terms) · [Google Privacy Policy](https://policies.google.com/privacy)
+
+= Google Apps Script webhook (alternate mode) =
+
+When *Delivery method* is set to *Webhook*, the same submission payload (JSON) is POSTed instead to a Google Apps Script Web App URL that you deploy yourself from `google-apps-script-example.js` (bundled with this plugin). That script runs on Google's infrastructure (`script.google.com` / `script.googleusercontent.com`) under your own Google account and appends the row to your sheet.
+
+* What is sent: the same mapped field values described above (`formTitle`/`formId` plus form fields, captcha tokens stripped), sent as the POST body.
+* When it's sent: immediately after a matching submission (if enabled), or on manual "Resend".
+* Service: Google Apps Script, operated by Google LLC. [Terms of Service](https://developers.google.com/terms) · [Google Privacy Policy](https://policies.google.com/privacy)
+
 == Changelog ==
+
+= 1.2.1 =
+* Moved the field-mapping helper script out of an inline `<script>` tag (admin/class-cf7dbgs-admin.php) into `admin/js/cf7dbgs-field-mapping.js`, enqueued via `wp_enqueue_script()` on the Settings page only. No functional change.
+* Docs: added the "External services" section describing the Google Sheets API / OAuth2 and Google Apps Script webhook connections, per WordPress.org plugin review feedback.
+
+= 1.2.0 =
+* Renamed plugin to "ARPHost CF7 Submission Archive" (slug `arphost-cf7-submission-archive`, text domain to match) per WordPress.org plugin review feedback — the prior name/slug led with the Contact Form 7 ("CF7") trademark and was too close to other CF7/Sheets integration plugin names. No functional changes. Contributors line corrected to the actual WordPress.org account (`hostalot`). Added the `Requires Plugins: contact-form-7` header.
 
 = 1.1.9 =
 * Fix: text domain reverted (again) to `cf7-database-google-sheets` — this is the canonical slug going forward (matches the plugin's readable name and is what WordPress Playground / Plugin Check expects). The plugin's packaged folder and zip are now also named `cf7-database-google-sheets` to match, so the slug is consistent everywhere. The GitLab project/repo itself stays named `cf7-db-gsheets` — only the WordPress-facing plugin slug changed.

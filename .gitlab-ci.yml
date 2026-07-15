@@ -1,11 +1,12 @@
-# CF7 Database & Google Sheets — open-source WordPress plugin pipeline
-# No server deploys: validate -> security -> package -> manual GitHub release.
-# This plugin is not part of the ARPHost infrastructure; it ships to GitHub only.
+# ARPHost CF7 Submission Archive — open-source WordPress plugin pipeline
+# No server deploys: validate -> security -> package -> manual deploy (WordPress.org SVN, GitHub release).
+# This plugin is not part of the ARPHost infrastructure.
 
 stages:
   - validate
   - security
   - package
+  - deploy
   - release
 
 variables:
@@ -16,7 +17,7 @@ variables:
   # WordPress Plugin Check compares Text Domain against the install folder
   # name. Keep these in sync with cf7-db-gsheets.php's Text Domain header.
   MAIN_FILE: "cf7-db-gsheets.php"
-  PLUGIN_SLUG: "cf7-database-google-sheets"
+  PLUGIN_SLUG: "arphost-cf7-submission-archive"
   GIT_DEPTH: "0"
 
 workflow:
@@ -128,8 +129,56 @@ package_plugin:
     paths:
       - "${PLUGIN_SLUG}-*.zip"
 
+# Deploy a tagged release to the WordPress.org plugin SVN repository.
+# Manual and requires the plugin to already be APPROVED on WordPress.org —
+# the SVN repo at plugins.svn.wordpress.org/${PLUGIN_SLUG} does not exist
+# until then, so this job will fail with "repository not found" before that.
+#
+# Required CI/CD variables (Settings > CI/CD > Variables on this project):
+#   SVN_USERNAME - WordPress.org username, case-sensitive (the forum/profile
+#                  login, e.g. "hostalot" — NOT an email address).
+#   SVN_PASSWORD - the WordPress.org *SVN-specific* password, generated at
+#                  https://profiles.wordpress.org/me/profile/edit/group/3/?screen=svn-password
+#                  (this is separate from the normal wordpress.org login
+#                  password). Mark this variable both Protected and Masked.
+# See: https://developer.wordpress.org/plugins/wordpress-org/how-to-use-subversion/
+deploy_wordpress_svn:
+  extends: .dev_runner
+  stage: deploy
+  needs: [package_plugin]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+  environment:
+    name: wordpress-org
+    url: https://wordpress.org/plugins/${PLUGIN_SLUG}/
+  script:
+    - command -v svn >/dev/null || { echo "svn (Subversion) is not installed on this runner. Install it (e.g. apt-get install -y subversion) and re-run."; exit 1; }
+    - '[ -n "$SVN_USERNAME" ] || { echo "SVN_USERNAME CI/CD variable not set — see job comments for setup."; exit 1; }'
+    - '[ -n "$SVN_PASSWORD" ] || { echo "SVN_PASSWORD CI/CD variable not set — see job comments for setup."; exit 1; }'
+    - VERSION=$(grep -E '^\s*\*\s*Version:' "${MAIN_FILE}" | awk '{print $NF}')
+    - ZIP="${PLUGIN_SLUG}-${VERSION}.zip"
+    - '[ -f "$ZIP" ] || { echo "Package artifact ${ZIP} missing — run package_plugin first."; exit 1; }'
+    - echo "Deploying ${PLUGIN_SLUG} ${VERSION} to WordPress.org SVN"
+    - SVN_URL="https://plugins.svn.wordpress.org/${PLUGIN_SLUG}"
+    - rm -rf svn-work svn-release && mkdir svn-release
+    - unzip -q "$ZIP" -d svn-release
+    - svn co "$SVN_URL" svn-work --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert -q
+    - |
+      if [ -d "svn-work/tags/${VERSION}" ]; then
+        echo "Tag ${VERSION} already exists in SVN — bump the plugin version before deploying again."
+        exit 1
+      fi
+    # Sync trunk with this release's file set (mirrors package_plugin's file list).
+    - rsync -a --delete "svn-release/${PLUGIN_SLUG}/" "svn-work/trunk/"
+    - cd svn-work
+    - svn add --force trunk --parents --depth infinity -q || true
+    - svn status trunk | awk '/^!/ {print $2}' | xargs -r svn rm --force -q
+    - svn cp trunk "tags/${VERSION}"
+    - svn ci -m "Release ${VERSION}" --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --no-auth-cache
+
 # Open-source release: mirrors the repo to GitHub and publishes a release
-# with the plugin zip attached. Manual and final — the ONLY deploy target.
+# with the plugin zip attached. Manual and final.
 # Uses the instance-level CI/CD variable:
 #   GITHUB_PAT - GitHub PAT with contents:write on the repo
 #   GITHUB_REPO  - defaults to arphost-com/CF7-Submissions

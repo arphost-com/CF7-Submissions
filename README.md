@@ -1,4 +1,4 @@
-# CF7 Database & Google Sheets
+# ARPHost CF7 Submission Archive
 
 Saves every Contact Form 7 submission to your WordPress database, and sends it to Google Sheets. Browse, search, export CSV, and resend from **WP Admin → CF7 Submissions**.
 

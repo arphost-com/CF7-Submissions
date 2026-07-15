@@ -2,7 +2,7 @@
 /**
  * Database layer: table creation and CRUD for submissions.
  *
- * @package cf7-db-gsheets
+ * @package arphost-cf7-submission-archive
  */
 
 defined( 'ABSPATH' ) || exit;

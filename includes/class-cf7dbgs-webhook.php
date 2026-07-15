@@ -2,7 +2,7 @@
 /**
  * Sends submissions to a Google Sheets webhook (Google Apps Script Web App).
  *
- * @package cf7-db-gsheets
+ * @package arphost-cf7-submission-archive
  */
 
 defined( 'ABSPATH' ) || exit;

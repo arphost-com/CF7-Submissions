@@ -2,7 +2,7 @@
 /**
  * Captures Contact Form 7 submissions.
  *
- * @package cf7-db-gsheets
+ * @package arphost-cf7-submission-archive
  */
 
 defined( 'ABSPATH' ) || exit;

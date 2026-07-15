@@ -4,7 +4,7 @@
  * No Apps Script, no deployments: paste the service-account JSON key in
  * Settings and share the spreadsheet with the service account's email.
  *
- * @package cf7-db-gsheets
+ * @package arphost-cf7-submission-archive
  */
 
 defined( 'ABSPATH' ) || exit;
