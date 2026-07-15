@@ -172,8 +172,13 @@ deploy_wordpress_svn:
         echo "Could not reach the WordPress.org readme validator after retries (curl exit ${RV_CURL_STATUS}) — check runner network/DNS to wordpress.org and re-run."
         exit 1
       fi
-      RV_ERRORS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='errors'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g')
-      RV_WARNINGS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='warnings'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g')
+      # NOTE: grep exits 1 when there are simply no matches (the common case
+      # for a clean readme.txt — no <li> entries to find). Under this
+      # runner's shell (errexit + pipefail both active), that non-zero exit
+      # would silently kill the whole step. The trailing `|| true` on each
+      # pipeline neutralizes that — RV_ERRORS/RV_WARNINGS just end up empty.
+      RV_ERRORS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='errors'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g'; true)
+      RV_WARNINGS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='warnings'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g'; true)
       if [ -n "$RV_WARNINGS" ]; then
         echo "readme.txt validator WARNINGS (non-blocking):"
         echo "$RV_WARNINGS" | sed 's/^/  - /'
