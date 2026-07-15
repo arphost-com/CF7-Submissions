@@ -164,7 +164,8 @@ deploy_wordpress_svn:
     # rather than reimplementing its rules. Fatal errors block the deploy;
     # warnings/notes are printed but non-blocking.
     - |
-      RV_HTML=$(curl -sf -X POST "https://wordpress.org/plugins/developers/readme-validator/" --data-urlencode "readme@readme.txt")
+      RV_HTML=$(curl -sS --fail-with-body --retry 3 --retry-delay 3 --retry-all-errors -X POST "https://wordpress.org/plugins/developers/readme-validator/" --data-urlencode "readme@readme.txt") \
+        || { echo "Could not reach the WordPress.org readme validator after retries — check runner network/DNS to wordpress.org and re-run."; exit 1; }
       RV_ERRORS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='errors'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g')
       RV_WARNINGS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='warnings'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g')
       if [ -n "$RV_WARNINGS" ]; then
