@@ -159,6 +159,24 @@ deploy_wordpress_svn:
     - VERSION=$(grep -E '^\s*\*\s*Version:' "${MAIN_FILE}" | awk '{print $NF}')
     - ZIP="${PLUGIN_SLUG}-${VERSION}.zip"
     - '[ -f "$ZIP" ] || { echo "Package artifact ${ZIP} missing — run package_plugin first."; exit 1; }'
+    # Validate readme.txt against WordPress.org's own readme standard, using
+    # their real validator (https://wordpress.org/plugins/developers/readme-validator/)
+    # rather than reimplementing its rules. Fatal errors block the deploy;
+    # warnings/notes are printed but non-blocking.
+    - |
+      RV_HTML=$(curl -sf -X POST "https://wordpress.org/plugins/developers/readme-validator/" --data-urlencode "readme@readme.txt")
+      RV_ERRORS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='errors'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g')
+      RV_WARNINGS=$(printf '%s' "$RV_HTML" | sed -n "/<ul class='warnings'>/,/<\/ul>/p" | grep -oP "(?<=<li>).*?(?=</li>)" | sed -e 's/<[^>]*>//g' -e "s/&#8217;/'/g" -e 's/&#8220;/"/g' -e 's/&#8221;/"/g' -e 's/&#8211;/-/g' -e 's/&amp;/\&/g')
+      if [ -n "$RV_WARNINGS" ]; then
+        echo "readme.txt validator WARNINGS (non-blocking):"
+        echo "$RV_WARNINGS" | sed 's/^/  - /'
+      fi
+      if [ -n "$RV_ERRORS" ]; then
+        echo "readme.txt FAILED the WordPress.org readme validator:"
+        echo "$RV_ERRORS" | sed 's/^/  - /'
+        exit 1
+      fi
+      echo "readme.txt passed the WordPress.org readme validator."
     - echo "Deploying ${PLUGIN_SLUG} ${VERSION} to WordPress.org SVN"
     - SVN_URL="https://plugins.svn.wordpress.org/${PLUGIN_SLUG}"
     - rm -rf svn-work svn-release && mkdir svn-release
