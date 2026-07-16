@@ -244,8 +244,17 @@ github_release:
     - TAG="v${VERSION}"
     - ZIP="${PLUGIN_SLUG}-${VERSION}.zip"
     - '[ -f "$ZIP" ] || { echo "Package artifact ${ZIP} missing"; exit 1; }'
-    # Mirror main to GitHub (never prints the token).
-    - git push --quiet "https://x-access-token:${GITHUB_PAT}@github.com/${GITHUB_REPO}.git" "HEAD:refs/heads/main"
+    # Mirror main to GitHub with the GitLab CI config stripped — .gitlab-ci.yml
+    # is internal (runner/deploy details) and stays GitLab-only. The mirror is
+    # always "GitLab main + one strip commit", recreated and force-pushed each
+    # release, so GitHub main history rewrites on every run (it's a mirror, not
+    # a collaboration branch). Never prints the token.
+    - git rm -q --cached .gitlab-ci.yml
+    - git -c user.name="ARPHost" -c user.email="barry@arphost.com" commit -q -m "Remove GitLab CI config from GitHub mirror"
+    - git push --force --quiet "https://x-access-token:${GITHUB_PAT}@github.com/${GITHUB_REPO}.git" "HEAD:refs/heads/main"
+    # Undo the strip commit so the runner workdir matches the GitLab commit again
+    # (git rm --cached leaves the file on disk, so nothing is lost).
+    - git reset -q --mixed HEAD~1
     # Create the release for this version (idempotent: reuse if the tag exists).
     - |
       AUTH="Authorization: Bearer ${GITHUB_PAT}"
