@@ -194,10 +194,14 @@ deploy_wordpress_svn:
     - rm -rf svn-work svn-release && mkdir svn-release
     - unzip -q "$ZIP" -d svn-release
     - svn co "$SVN_URL" svn-work --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert -q
+    # If this version's tag already exists in SVN, this run is an assets/trunk
+    # refresh (new screenshots, icon, banner) rather than a release — skip tag
+    # creation instead of failing. A new plugin release still needs a version bump.
     - |
+      TAG_EXISTS=""
       if [ -d "svn-work/tags/${VERSION}" ]; then
-        echo "Tag ${VERSION} already exists in SVN — bump the plugin version before deploying again."
-        exit 1
+        TAG_EXISTS=1
+        echo "Tag ${VERSION} already exists in SVN — deploying trunk/assets changes only, no new tag."
       fi
     # Sync trunk with this release's file set (mirrors package_plugin's file list).
     - rsync -a --delete "svn-release/${PLUGIN_SLUG}/" "svn-work/trunk/"
@@ -209,8 +213,14 @@ deploy_wordpress_svn:
     - cd svn-work
     - svn add --force trunk assets --parents --depth infinity -q || true
     - svn status trunk assets | awk '/^!/ {print $2}' | xargs -r svn rm --force -q
-    - svn cp trunk "tags/${VERSION}"
-    - svn ci -m "Release ${VERSION}" --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --no-auth-cache
+    - |
+      if [ -z "$TAG_EXISTS" ]; then
+        svn cp trunk "tags/${VERSION}"
+        COMMIT_MSG="Release ${VERSION}"
+      else
+        COMMIT_MSG="Update trunk/assets for ${VERSION} (tag already released)"
+      fi
+    - svn ci -m "$COMMIT_MSG" --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --no-auth-cache
 
 # Open-source release: mirrors the repo to GitHub and publishes a release
 # with the plugin zip attached. Manual and final.
