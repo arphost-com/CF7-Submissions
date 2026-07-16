@@ -201,9 +201,14 @@ deploy_wordpress_svn:
       fi
     # Sync trunk with this release's file set (mirrors package_plugin's file list).
     - rsync -a --delete "svn-release/${PLUGIN_SLUG}/" "svn-work/trunk/"
+    # WordPress.org directory assets (screenshot-N.png, banner-*, icon-*) live in
+    # the SVN assets/ folder — a sibling of trunk, never inside the plugin zip.
+    # Screenshot numbering maps to the readme.txt "== Screenshots ==" captions.
+    - mkdir -p svn-work/assets
+    - '[ -d assets ] && rsync -a --delete assets/ svn-work/assets/ || echo "No assets/ directory in repo — skipping SVN assets sync."'
     - cd svn-work
-    - svn add --force trunk --parents --depth infinity -q || true
-    - svn status trunk | awk '/^!/ {print $2}' | xargs -r svn rm --force -q
+    - svn add --force trunk assets --parents --depth infinity -q || true
+    - svn status trunk assets | awk '/^!/ {print $2}' | xargs -r svn rm --force -q
     - svn cp trunk "tags/${VERSION}"
     - svn ci -m "Release ${VERSION}" --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --no-auth-cache
 

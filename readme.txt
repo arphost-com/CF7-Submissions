@@ -5,7 +5,7 @@ Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
 Requires Plugins: contact-form-7
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -86,6 +86,12 @@ All CF7 forms. Use the `cf7dbgs_capture_submission` filter to exclude specific f
 
 Only the posted field values are stored; uploaded files are handled by CF7 as usual and are not copied.
 
+== Screenshots ==
+
+1. Settings — database storage toggle, Google Sheets delivery (API or webhook mode), per-form routing, and field mapping with auto-detected CF7 fields.
+2. Submissions list — filter by form, search fields, per-submission Sheets delivery status, CSV export, view/resend/delete actions.
+3. Submission detail — every captured field with date, form, and Sheets delivery status.
+
 == External services ==
 
 This plugin connects to Google services to forward Contact Form 7 submissions to a Google Sheet. Both connections are **off by default** (Settings → *Send to Google Sheets*) and use *your own* Google account/spreadsheet — no data passes through any ARPHost server.
@@ -107,6 +113,9 @@ When *Delivery method* is set to *Webhook*, the same submission payload (JSON) i
 * Service: Google Apps Script, operated by Google LLC. [Terms of Service](https://developers.google.com/terms) · [Google Privacy Policy](https://policies.google.com/privacy)
 
 == Changelog ==
+
+= 1.2.2 =
+* Added WordPress.org directory screenshots (settings, submissions list, submission detail) with a readme Screenshots section; CI now syncs the assets/ folder to the WordPress.org SVN assets directory. No functional changes.
 
 = 1.2.1 =
 * Moved the field-mapping helper script out of an inline `<script>` tag (admin/class-cf7dbgs-admin.php) into `admin/js/cf7dbgs-field-mapping.js`, enqueued via `wp_enqueue_script()` on the Settings page only. No functional change.

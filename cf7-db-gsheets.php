@@ -3,7 +3,7 @@
  * Plugin Name:       ARPHost CF7 Submission Archive
  * Plugin URI:        https://github.com/arphost-com/CF7-Submissions
  * Description:       Saves Contact Form 7 submissions to the WordPress database and optionally forwards them to a Google Sheets webhook (Google Apps Script). Includes an admin submissions browser and CSV export.
- * Version:           1.2.1
+ * Version:           1.2.2
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Requires Plugins:  contact-form-7
@@ -21,7 +21,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CF7DBGS_VERSION', '1.2.1' );
+define( 'CF7DBGS_VERSION', '1.2.2' );
 define( 'CF7DBGS_PLUGIN_FILE', __FILE__ );
 define( 'CF7DBGS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CF7DBGS_OPTION', 'cf7dbgs_settings' );
